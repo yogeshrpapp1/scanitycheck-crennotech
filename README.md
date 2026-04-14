@@ -29,4 +29,4 @@ ScanityCheck is an internal vulnerability scanning tool that scans web applicati
 | Zainab Begum| Frontend Developer |
 
 ## Project Status
-Currently in active development — Sprint 3
+Currently in active development : Sprint 3
