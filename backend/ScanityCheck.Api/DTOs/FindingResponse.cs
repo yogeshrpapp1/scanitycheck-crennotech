@@ -8,9 +8,17 @@ public class FindingResponse
     public string Description { get; set; } = "";
     public string Severity { get; set; } = "";
     public string Endpoint { get; set; } = "";
+    public string? NormalizedEndpoint { get; set; }
     public string Recommendation { get; set; } = "";
     public string SourceTool { get; set; } = "";
     public string Category { get; set; } = "";
+
+    public string? CweId { get; set; }
+    public string? WascId { get; set; }
+    public string? AlertRef { get; set; }
+    public string? Confidence { get; set; }
+    public string? RiskDescription { get; set; }
+
     public DateTime CreatedAt { get; set; }
     public List<EvidenceLogResponse> EvidenceLogs { get; set; } = new();
 }

@@ -17,6 +17,9 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IScanRunnerService, ScanRunnerService>();
+builder.Services.AddScoped<IZapImportService, ZapImportService>();
+builder.Services.AddScoped<IZapRunnerService, ZapRunnerService>();
+builder.Services.AddScoped<IScanExecutionService, ScanExecutionService>();
 
 builder.Services.AddHangfire(config =>
 {

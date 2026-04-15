@@ -14,9 +14,17 @@ public class Finding
     public SeverityLevel Severity { get; set; } = SeverityLevel.Info;
 
     public string Endpoint { get; set; } = "";
+    public string? NormalizedEndpoint { get; set; }
+
     public string Recommendation { get; set; } = "";
     public string SourceTool { get; set; } = "";
     public string Category { get; set; } = "General";
+
+    public string? CweId { get; set; }
+    public string? WascId { get; set; }
+    public string? AlertRef { get; set; }
+    public string? Confidence { get; set; }
+    public string? RiskDescription { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

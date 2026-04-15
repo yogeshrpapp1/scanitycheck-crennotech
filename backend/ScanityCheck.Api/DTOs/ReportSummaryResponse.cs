@@ -16,4 +16,5 @@ public class ReportSummaryResponse
     public string? Summary { get; set; }
     public int FindingsCount { get; set; }
     public Dictionary<string, int> SeverityBreakdown { get; set; } = new();
+    public List<string> TopIssues { get; set; } = new();
 }

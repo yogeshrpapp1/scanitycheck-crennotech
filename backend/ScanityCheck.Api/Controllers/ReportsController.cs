@@ -54,6 +54,13 @@ public class ReportsController : ControllerBase
             .GroupBy(f => f.Severity.ToString())
             .ToDictionary(g => g.Key, g => g.Count());
 
+        var topIssues = scan.Findings
+            .GroupBy(f => f.Title)
+            .OrderByDescending(g => g.Count())
+            .Take(5)
+            .Select(g => $"{g.Key} ({g.Count()})")
+            .ToList();
+
         return Ok(new ReportSummaryResponse
         {
             Id = scan.Id,
@@ -69,7 +76,8 @@ public class ReportsController : ControllerBase
             ReportGeneratedAt = scan.ReportGeneratedAt,
             Summary = scan.Summary,
             FindingsCount = scan.Findings.Count,
-            SeverityBreakdown = severityBreakdown
+            SeverityBreakdown = severityBreakdown,
+            TopIssues = topIssues
         });
     }
 
@@ -95,17 +103,20 @@ public class ReportsController : ControllerBase
             return NotFound(new { message = "No findings found for this scan." });
 
         var sb = new StringBuilder();
-        sb.AppendLine("Id,Title,Category,Severity,Endpoint,SourceTool,Description,Recommendation");
+        sb.AppendLine("Id,Title,Severity,Endpoint,NormalizedEndpoint,SourceTool,CweId,WascId,AlertRef,Description,Recommendation");
 
         foreach (var finding in findings)
         {
             sb.AppendLine(string.Join(",",
                 EscapeCsv(finding.Id.ToString()),
                 EscapeCsv(finding.Title),
-                EscapeCsv(finding.Category),
                 EscapeCsv(finding.Severity.ToString()),
                 EscapeCsv(finding.Endpoint),
+                EscapeCsv(finding.NormalizedEndpoint ?? ""),
                 EscapeCsv(finding.SourceTool),
+                EscapeCsv(finding.CweId ?? ""),
+                EscapeCsv(finding.WascId ?? ""),
+                EscapeCsv(finding.AlertRef ?? ""),
                 EscapeCsv(finding.Description),
                 EscapeCsv(finding.Recommendation)
             ));
