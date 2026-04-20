@@ -39,15 +39,13 @@ services:
       sql-server:
         condition: service_healthy
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   ports:
-  #     - "3000:80"
-  #   environment:
-  #     - VITE_API_URL=http://api:8080
-  #   depends_on:
-  #     - api
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - api
 
 volumes:
   mssql_data:
