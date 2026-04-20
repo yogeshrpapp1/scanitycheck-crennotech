@@ -83,6 +83,16 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
+// Automatically apply any pending migrations in Development env
+if (app.Environment.IsDevelopment())
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+        dbContext.Database.Migrate();  // Apply migrations
+    }
+}
+
 app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
@@ -113,7 +123,22 @@ app.UseAuthorization();
 //     Authorization = new[] { new AdminHangfireAuthorizationFilter() }
 
 // });
-app.UseHangfireDashboard("/hangfire");
+// app.UseHangfireDashboard("/hangfire");
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new DevHangfireAuthorizationFilter() }
+    });
+}
+else
+{
+    app.UseHangfireDashboard("/hangfire", new DashboardOptions
+    {
+        Authorization = new[] { new AdminHangfireAuthorizationFilter() }
+    });
+}
 
 app.MapControllers();
 
