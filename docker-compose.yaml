@@ -1,7 +1,6 @@
 services:
   sql-server:
     image: mcr.microsoft.com/mssql/server
-    container_name: sql-server
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
