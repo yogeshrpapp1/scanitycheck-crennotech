@@ -22,7 +22,7 @@ RUN apt-get update && \
     rm ZAP_2.17.0_Linux.tar.gz
 
 # Set ZAP path env variable
-ENV ZAP_PATH=/opt/ZAP_2.17.0/zap.sh
+ENV ZapSettings__ZapPath=/opt/ZAP_2.17.0/zap.sh
 
 # Expose the port the API will run on
 EXPOSE 8080
