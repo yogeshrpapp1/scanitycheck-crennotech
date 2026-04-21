@@ -28,12 +28,12 @@ services:
       Jwt__Audience: ScanityCheckUsers
       Jwt__ExpiryMinutes: 120
       ZapSettings__Mode: ${ZAP_MODE}
-      ZapSettings__ReportsFolder: /app/reports/zap
+      ZapSettings__ReportsFolder: /reports/zap
     volumes:
       - ./backend/ScanityCheck.Api:/app
       - /app/bin
       - /app/obj
-      - ./reports:/app/reports
+      - ./reports:/reports
     depends_on:
       sql-server:
         condition: service_healthy
