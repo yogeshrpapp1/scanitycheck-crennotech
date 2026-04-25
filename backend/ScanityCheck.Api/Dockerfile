@@ -14,15 +14,17 @@ RUN dotnet restore
 # Copy everything
 COPY . ./
 
-# Install Java and ZAP (v2.17.0)
+ARG ZAP_VERSION
+
+# Install Java and ZAP
 RUN apt-get update && \
     apt-get install -y wget default-jre && \
-    wget https://github.com/zaproxy/zaproxy/releases/download/v2.17.0/ZAP_2.17.0_Linux.tar.gz && \
-    tar -xvzf ZAP_2.17.0_Linux.tar.gz -C /opt && \
-    rm ZAP_2.17.0_Linux.tar.gz
+    wget https://github.com/zaproxy/zaproxy/releases/download/v${ZAP_VERSION}/ZAP_${ZAP_VERSION}_Linux.tar.gz && \
+    tar -xvzf ZAP_${ZAP_VERSION}_Linux.tar.gz -C /opt && \
+    rm ZAP_${ZAP_VERSION}_Linux.tar.gz
 
-# Set ZAP path env variable
-ENV ZapSettings__ZapPath=/opt/ZAP_2.17.0/zap.sh
+# Set persistent ENV inside the image
+ENV ZAP_INSTALLED_VERSION=${ZAP_VERSION}
 
 # Expose the port the API will run on
 EXPOSE 8080
