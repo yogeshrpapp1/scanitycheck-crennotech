@@ -8,7 +8,7 @@ export default defineConfig({
     proxy: {
       // This only applies during 'npm run dev'
       '/api': {
-        target: 'http://localhost:5000', 
+        target: 'http://api:8080', 
         changeOrigin: true,
         secure: false,
       }
