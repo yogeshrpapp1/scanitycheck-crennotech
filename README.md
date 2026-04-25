@@ -48,7 +48,7 @@ Once the containers are running, the services are exposed at the following URLs:
 
 | Service      | URL                                         |
 | :----------- | :------------------------------------------ |
-| **Frontend** | [http://localhost](http://localhost)   |
+| **Frontend** | [http://localhost:5173](http://localhost:5173)   |
 | **Backend API (base URL)** | [http://localhost:8080](http://localhost:8080) |
 
 **Note**: The backend does not expose a response at `/`. API documentation (Swagger UI) is available at `/swagger`.
