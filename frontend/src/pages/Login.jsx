@@ -88,6 +88,7 @@ function Login() {
 onBlur={(e) => e.target.style.border = "1px solid #e2e8f0"}
         style={{
   width: "100%",
+  boxSizing: "border-box",
   padding: "12px",
   marginBottom: "15px",
   borderRadius: "6px",
@@ -104,6 +105,7 @@ onBlur={(e) => e.target.style.border = "1px solid #e2e8f0"}
 onBlur={(e) => e.target.style.border = "1px solid #e2e8f0"}
         style={{
   width: "100%",
+  boxSizing: "border-box",
   padding: "12px",
   marginBottom: "15px",
   borderRadius: "6px",
@@ -117,6 +119,7 @@ onBlur={(e) => e.target.style.border = "1px solid #e2e8f0"}
   onClick={handleLogin}
   style={{
     width: "100%",
+    boxSizing: "border-box",
     padding: "12px",
     background: "#2563eb",
     color: "white",

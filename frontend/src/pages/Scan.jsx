@@ -113,6 +113,7 @@ function Scan() {
         onChange={(e) => setTarget(e.target.value)}
         style={{
           width: "100%",
+          boxSizing: "border-box",
           padding: "12px",
           marginBottom: "15px",
           borderRadius: "6px",
