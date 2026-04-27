@@ -1,7 +1,7 @@
 services:
   sql-server:
     image: mcr.microsoft.com/mssql/server
-    container_name: sql-server
+    platform: linux/amd64
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
@@ -19,8 +19,10 @@ services:
   api:
     build:
       context: ./backend/ScanityCheck.Api
+      args:
+        - ZAP_VERSION=${ZAP_VERSION}
     ports:
-      - "5000:8080"
+      - "8080:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Server=sql-server;Database=ScanityCheckDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
@@ -28,26 +30,33 @@ services:
       Jwt__Issuer: ScanityCheck
       Jwt__Audience: ScanityCheckUsers
       Jwt__ExpiryMinutes: 120
+      ZapSettings__ZapPath: /opt/ZAP_${ZAP_VERSION}/zap.sh
       ZapSettings__Mode: ${ZAP_MODE}
-      ZapSettings__ReportsFolder: /app/reports/zap
+      ZapSettings__ReportsFolder: /reports/zap
     volumes:
       - ./backend/ScanityCheck.Api:/app
       - /app/bin
       - /app/obj
-      - ./reports:/app/reports
+      - ./reports:/reports
     depends_on:
       sql-server:
         condition: service_healthy
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #   ports:
-  #     - "3000:80"
-  #   environment:
-  #     - VITE_API_URL=http://api:8080
-  #   depends_on:
-  #     - api
+  frontend:
+    build:
+      context: ./frontend
+      target: development    # Change to 'production' later
+    # environment:
+      # - CHOKIDAR_USEPOLLING=true  # Uncomment this if hot-reload fails
+    ports:
+      - "5173:5173"          # DEV: Mapping host 5173 to Vite 5173
+      # - "80:80"              # PROD: Mapping host 80 to Nginx 80
+    volumes:
+      - ./frontend:/app
+      - node_modules:/app/node_modules
+    depends_on:
+      - api
 
 volumes:
   mssql_data:
+  node_modules:

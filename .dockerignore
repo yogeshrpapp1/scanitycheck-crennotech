@@ -1,0 +1,18 @@
+# Ignore version control metadata
+.git
+.gitignore
+
+# Ignore local development environment files
+.env
+.env.example
+
+# Ignore OS-generated files
+.DS_Store
+Thumbs.db
+
+# Ignore build artifacts and large dependencies
+node_modules/
+
+# Ignore .NET build artifacts
+bin/
+obj/
