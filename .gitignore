@@ -11,6 +11,9 @@
 *.sln.docstates
 *.env
 
+# Ignore all reports
+/reports/
+
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
 
