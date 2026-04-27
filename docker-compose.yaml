@@ -4,14 +4,14 @@ services:
     platform: linux/amd64
     environment:
       ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD}
+      MSSQL_SA_PASSWORD: ${MSSQL_SA_PASSWORD:?MSSQL_SA_PASSWORD must be defined in .env}
       MSSQL_PID: "StandardDeveloper"
     ports:
       - "1433:1433"
     volumes:
       - mssql_data:/var/opt/mssql
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P $MSSQL_SA_PASSWORD -Q \"SELECT 1\" -C || exit 1"]
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$MSSQL_SA_PASSWORD' -Q \"SELECT 1\" -C || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -20,13 +20,13 @@ services:
     build:
       context: ./backend/ScanityCheck.Api
       args:
-        - ZAP_VERSION=${ZAP_VERSION}
+        ZAP_VERSION: "${ZAP_VERSION:?ZAP_VERSION must be defined in .env}"
     ports:
       - "8080:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       ConnectionStrings__DefaultConnection: "Server=sql-server;Database=ScanityCheckDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
-      Jwt__Key: ${JWT_KEY}
+      Jwt__Key: ${JWT_KEY:?JWT_KEY must be defined in .env}
       Jwt__Issuer: ScanityCheck
       Jwt__Audience: ScanityCheckUsers
       Jwt__ExpiryMinutes: 120
