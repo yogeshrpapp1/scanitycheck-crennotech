@@ -1,41 +1,60 @@
-# Use the official .NET 8 SDK image as the build environment
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+# --- Stage 1: Download ZAP ---
+FROM debian:trixie-slim AS zap-downloader
+ARG ZAP_VERSION
+RUN apt-get update && apt-get install -y wget && \
+    wget https://github.com/zaproxy/zaproxy/releases/download/v${ZAP_VERSION}/ZAP_${ZAP_VERSION}_Linux.tar.gz && \
+    tar -xvzf ZAP_${ZAP_VERSION}_Linux.tar.gz -C /opt
 
-# Set the working directory inside the container
+# --- Stage 2: Download Nuclei ---
+FROM debian:trixie-slim AS nuclei-downloader
+ARG NUCLEI_VERSION
+RUN apt-get update && apt-get install -y wget unzip && \
+    wget https://github.com/projectdiscovery/nuclei/releases/download/v${NUCLEI_VERSION}/nuclei_${NUCLEI_VERSION}_linux_amd64.zip && \
+    unzip nuclei_${NUCLEI_VERSION}_linux_amd64.zip
+
+# --- Stage 3: Build .NET App ---
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS dotnet-builder
 WORKDIR /app
-
-# Configure the ASP.NET Core app to listen on port 8080
-ENV ASPNETCORE_URLS=http://+:8080
-
-# Copy the project file(s) first to leverage Docker layer caching for restore
 COPY *.csproj ./
 RUN dotnet restore
-
-# Copy everything
 COPY . ./
+# Note: In production, use 'dotnet publish' here
+
+# --- Stage 4: Final production image ---
+FROM mcr.microsoft.com/dotnet/sdk:8.0
+WORKDIR /app
 
 ARG ZAP_VERSION
-ARG NUCLEI_VERSION=3.3.9
+ARG NUCLEI_VERSION
 
+# 1. Install runtime dependencies
 RUN apt-get update && \
-    apt-get install -y wget curl unzip default-jre && \
-    wget https://github.com/zaproxy/zaproxy/releases/download/v${ZAP_VERSION}/ZAP_${ZAP_VERSION}_Linux.tar.gz && \
-    tar -xvzf ZAP_${ZAP_VERSION}_Linux.tar.gz -C /opt && \
-    rm ZAP_${ZAP_VERSION}_Linux.tar.gz && \
-    chmod +x /opt/ZAP_${ZAP_VERSION}/zap.sh && \
-    wget https://github.com/projectdiscovery/nuclei/releases/download/v${NUCLEI_VERSION}/nuclei_${NUCLEI_VERSION}_linux_amd64.zip && \
-    unzip nuclei_${NUCLEI_VERSION}_linux_amd64.zip && \
-    mv nuclei /usr/local/bin/nuclei && \
-    chmod +x /usr/local/bin/nuclei && \
-    rm nuclei_${NUCLEI_VERSION}_linux_amd64.zip && \
-    nuclei -version && \
-    nuclei -update-templates || true
+    apt-get install -y default-jre curl && \
+    rm -rf /var/lib/apt/lists/*
 
-# Set persistent ENV inside the image
+# 2. Copy tools from earlier stages
+COPY --from=zap-downloader /opt /opt
+COPY --from=nuclei-downloader /nuclei /usr/local/bin/nuclei
+RUN chmod +x /opt/ZAP_${ZAP_VERSION}/zap.sh && \
+    chmod +x /usr/local/bin/nuclei
+
+# 3. Copy /app from builder stage
+COPY --from=dotnet-builder /app /app
+
+# 4. Set environment variables
 ENV ZAP_INSTALLED_VERSION=${ZAP_VERSION}
+ENV NUCLEI_INSTALLED_VERSION=${NUCLEI_VERSION}
+ENV ASPNETCORE_URLS=http://+:8080
 
-# Expose the port the API will run on
+# 5. Final validation and template update
+RUN nuclei -version && \
+    mkdir -p /opt/nuclei-templates && \
+    (nuclei -update-templates || true) && \
+    if [ -d "/root/nuclei-templates" ]; then \
+        cp -r /root/nuclei-templates/* /opt/nuclei-templates/ && \
+        rm -rf /root/nuclei-templates; \
+    fi && \
+    chmod -R 755 /opt/nuclei-templates
+
 EXPOSE 8080
-
-# Run the application and listen on all network interfaces at port 8080
 ENTRYPOINT ["dotnet", "run", "--urls", "http://0.0.0.0:8080"]
