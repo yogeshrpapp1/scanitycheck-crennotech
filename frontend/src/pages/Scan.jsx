@@ -6,70 +6,92 @@ function Scan() {
   const [status, setStatus] = useState("");
   const [tool, setTool] = useState("ZAP");
 
-  const startScan = async () => {
+ const startSingleScan = async (selectedTool) => {
+  const response = await fetch("/api/Scans/start", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+    body: JSON.stringify({
+      targetId: parseInt(target, 10),
+      tool: selectedTool,
+      scope: "Full",
+    }),
+  });
+
+  const text = await response.text();
+const data = text ? JSON.parse(text) : {};
+
+  if (!response.ok) {
+    throw new Error(data.message || data.title || `${selectedTool} scan failed`);
+  }
+
+  return data;
+};
+
+const startScan = async () => {
+  if (!target) {
+    alert("Enter target ID");
+    return;
+  }
+
   try {
-  const response = await fetch("/api/scans/start", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${localStorage.getItem("token")}`
-  },
-  body: JSON.stringify({
-    targetId: 1,
-    tool: tool,
-    scope:"Full"
-  })
-});
+    setStatus("Starting...");
 
-    const data = await response.json();
+    if (tool === "Both") {
+      const zap = await startSingleScan("ZAP");
+      const nuclei = await startSingleScan("Nuclei");
 
-    console.log("Scan started:", data);
+      console.log("ZAP:", zap);
+      console.log("Nuclei:", nuclei);
 
-    setScanId(data.scanId); // store ID
-    setStatus("Queued");
+      setScanId(zap.scanId);//for both scans
+setStatus(`Both scans started: ZAP #${zap.scanId}, Nuclei #${nuclei.scanId}`);
+    } else {
+      const data = await startSingleScan(tool);
 
+      console.log("Scan:", data);
+
+      setScanId(data.scanId);
+      setStatus(`${tool} scan started`);
+    }
   } catch (error) {
     console.error(error);
-    alert("Error starting scan");
+    setStatus("Failed");
+    alert(error.message);
   }
 };
 
-  useEffect(() => {
+ useEffect(() => {
   if (!scanId) return;
 
-  const states = ["Queued", "Running", "Completed"];
-  let i = 0;
-
-  const interval = setInterval(() => {
-    const stored = JSON.parse(localStorage.getItem("scans")) || [];
-
-    const updated = stored.map((s) => {
-      if (s.id === scanId) {
-        return {
-          ...s,
-          status: states[i],
-          completedAt:
-            states[i] === "Completed"
-              ? new Date().toLocaleTimeString()
-              : null,
-          summary:
-            states[i] === "Completed"
-              ? "Scan completed"
-              : "Scan in progress"
-        };
-      }
-      return s;
+  const interval = setInterval(async () => {
+    const res = await fetch(`/api/Scans/${scanId}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     });
 
-    localStorage.setItem("scans", JSON.stringify(updated));
+    const data = await res.json();
 
-    setStatus(states[i]);
+    console.log("Status response:", data);
 
-    i++;
-
-    if (i >= states.length) {
-      clearInterval(interval);
+    if (!res.ok) {
+      console.log("Status API error:", data);
+      return;
     }
+
+    const currentStatus =
+  data.status ||
+  data.state ||
+  data.scanStatus ||
+  (data.id ? "Running" : "Queued");
+
+    setStatus(currentStatus);
+    if (currentStatus === "Completed") {
+  clearInterval(interval);
+}
   }, 3000);
 
   return () => clearInterval(interval);
@@ -107,8 +129,8 @@ function Scan() {
       </h2>
 
       <input
-        type="text"
-        placeholder="Enter target URL"
+        type="number"
+        placeholder="Enter target id"
         value={target}
         onChange={(e) => setTarget(e.target.value)}
         style={{
@@ -136,6 +158,8 @@ function Scan() {
   }}
 >
   <option value="ZAP">ZAP</option>
+  <option value="Nuclei">Nuclei</option>
+  <option value="Both">Both</option>
 </select>
 
       <button

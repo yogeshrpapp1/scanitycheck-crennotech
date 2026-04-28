@@ -22,11 +22,30 @@ useEffect(() => {
 
 
   const [scans, setScans] = useState([]);
-  useEffect(() => {
-  const interval = setInterval(() => {
-    const stored = JSON.parse(localStorage.getItem("scans")) || [];
-    setScans(stored);
-  }, 2000);
+  const [selectedScanId, setSelectedScanId] = useState(null);
+const [findings, setFindings] = useState([]);
+ useEffect(() => {
+  const fetchScans = async () => {
+    try {
+      const res = await fetch("/api/Scans", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
+
+      const data = await res.json();
+
+      console.log("Dashboard scans:", data);
+
+      setScans(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error loading scans:", error);
+    }
+  };
+
+  fetchScans();
+
+  const interval = setInterval(fetchScans, 3000);
 
   return () => clearInterval(interval);
 }, []);
@@ -35,7 +54,31 @@ useEffect(() => {
 
 
 
+const fetchFindings = async (scanId) => {
+  try {
+    const res = await fetch(`/api/Scans/${scanId}/findings`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
 
+    const data = await res.json();
+
+    console.log("Findings:", data);
+
+    setSelectedScanId(scanId);
+    if (!res.ok) {
+  console.log("Findings API error:", data);
+  setFindings([]);
+  alert(data.title || "Invalid scan ID");
+  return;
+}
+
+setFindings(Array.isArray(data) ? data : []);
+  } catch (error) {
+    console.error("Error fetching findings:", error);
+  }
+};
   return (
   <div
     style={{
@@ -177,6 +220,7 @@ useEffect(() => {
             <tr>
               <th style={{ padding: "12px", textAlign: "center" }}>Scan ID</th>
               <th style={{ padding: "12px", textAlign: "center" }}>Target URL</th>
+              <th style={{ padding: "12px", textAlign: "center" }}>Tool</th>
               <th style={{ padding: "12px", textAlign: "center" }}>Status</th>
               <th style={{ padding: "12px", textAlign: "center" }}>Start Time</th>
               <th style={{ padding: "12px", textAlign: "center" }}>End Time</th>
@@ -202,6 +246,7 @@ useEffect(() => {
               >
                 <td style={{ padding: "12px", textAlign: "center" }}>{scan.id}</td>
                 <td style={{ padding: "12px", textAlign: "center" }}>{scan.targetName}</td>
+                <td style={{ padding: "12px", textAlign: "center" }}>{scan.tool}</td>
 
                 <td style={{ padding: "12px", textAlign: "center" }}>
                   <span
@@ -230,9 +275,9 @@ useEffect(() => {
                 <td style={{ padding: "12px", textAlign: "center" }}>{scan.summary}</td>
 
                 <td style={{ padding: "12px", textAlign: "center" }}>
-                  {scan.status === "Completed" && (
+                  
                     <button
-                      onClick={() => navigate('/report/${scan.id}')}
+                      onClick={() => navigate(`/report/${scan.id}`)}
                       style={{
                         padding: "6px 12px",
                         background: "#2563eb",
@@ -245,12 +290,39 @@ useEffect(() => {
                     >
                       View Report
                     </button>
-                  )}
+                  
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        {selectedScanId && (
+  <div style={{ marginTop: "25px" }}>
+    <h2>Findings for Scan {selectedScanId}</h2>
+
+    {findings.length === 0 ? (
+      <p>No findings found</p>
+    ) : (
+      findings.map((finding) => (
+        <div
+          key={finding.id}
+          style={{
+            border: "1px solid #e2e8f0",
+            borderRadius: "8px",
+            padding: "12px",
+            marginBottom: "10px",
+            background: "#f8fafc",
+          }}
+        >
+          <h3>{finding.title}</h3>
+          <p><b>Severity:</b> {finding.severity}</p>
+          <p><b>Endpoint:</b> {finding.endpoint}</p>
+          <p>{finding.description}</p>
+        </div>
+      ))
+    )}
+  </div>
+)}
       </div>
     </div>
   </div>
