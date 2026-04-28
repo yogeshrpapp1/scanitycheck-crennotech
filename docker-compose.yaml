@@ -11,7 +11,11 @@ services:
     volumes:
       - mssql_data:/var/opt/mssql
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P '$MSSQL_SA_PASSWORD' -Q \"SELECT 1\" -C || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          '/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P ''$MSSQL_SA_PASSWORD'' -Q "SELECT 1" -C || exit 1',
+        ]
       interval: 10s
       timeout: 5s
       retries: 10
@@ -20,7 +24,8 @@ services:
     build:
       context: ./backend/ScanityCheck.Api
       args:
-        ZAP_VERSION: "${ZAP_VERSION:?ZAP_VERSION must be defined in .env}"
+        ZAP_VERSION: "${ZAP_VERSION}"
+        NUCLEI_VERSION: "3.3.9"
     ports:
       - "8080:8080"
     environment:
@@ -33,6 +38,9 @@ services:
       ZapSettings__ZapPath: /opt/ZAP_${ZAP_VERSION}/zap.sh
       ZapSettings__Mode: ${ZAP_MODE}
       ZapSettings__ReportsFolder: /reports/zap
+      NucleiSettings__NucleiPath: /usr/local/bin/nuclei
+      NucleiSettings__ReportsFolder: /reports/nuclei
+      NucleiSettings__TemplatesPath: /root/nuclei-templates
     volumes:
       - ./backend/ScanityCheck.Api:/app
       - /app/bin
@@ -45,11 +53,11 @@ services:
   frontend:
     build:
       context: ./frontend
-      target: development    # Change to 'production' later
+      target: development # Change to 'production' later
     # environment:
-      # - CHOKIDAR_USEPOLLING=true  # Uncomment this if hot-reload fails
+    # - CHOKIDAR_USEPOLLING=true  # Uncomment this if hot-reload fails
     ports:
-      - "5173:5173"          # DEV: Mapping host 5173 to Vite 5173
+      - "5173:5173" # DEV: Mapping host 5173 to Vite 5173
       # - "80:80"              # PROD: Mapping host 80 to Nginx 80
     volumes:
       - ./frontend:/app

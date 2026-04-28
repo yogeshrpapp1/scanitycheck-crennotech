@@ -61,13 +61,23 @@ public class ScansController : ControllerBase
         _context.ScanJobs.Add(scan);
         await _context.SaveChangesAsync();
 
-        if (request.Tool.Equals("ZAP", StringComparison.OrdinalIgnoreCase))
+        if (request.Tool.Equals("ZAP", StringComparison.OrdinalIgnoreCase)
+           || request.Tool.Equals("Nuclei", StringComparison.OrdinalIgnoreCase)
+           || request.Tool.Equals("ZAP+Nuclei", StringComparison.OrdinalIgnoreCase)
+           || request.Tool.Equals("Both", StringComparison.OrdinalIgnoreCase))
         {
-            BackgroundJob.Enqueue<IScanExecutionService>(service => service.ExecuteZapScanAsync(scan.Id));
+            BackgroundJob.Enqueue<IScanExecutionService>(service => service.ExecuteScanAsync(scan.Id));
         }
         else if (request.Tool.Equals("Simulated", StringComparison.OrdinalIgnoreCase))
         {
             BackgroundJob.Enqueue<IScanRunnerService>(service => service.RunScanAsync(scan.Id));
+        }
+        else
+        {
+            return BadRequest(new
+            {
+                message = "Invalid tool. Use ZAP, Nuclei, ZAP+Nuclei, Both, or Simulated."
+            });
         }
 
         return Ok(new

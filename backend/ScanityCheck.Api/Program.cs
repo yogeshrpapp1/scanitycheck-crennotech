@@ -17,7 +17,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("DockerPolicy", policy =>
     {
         // "http://localhost" is the default address for the Nginx container
-        policy.WithOrigins("http://localhost") 
+        policy.WithOrigins("http://localhost")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -31,6 +31,8 @@ builder.Services.AddScoped<IScanRunnerService, ScanRunnerService>();
 builder.Services.AddScoped<IZapImportService, ZapImportService>();
 builder.Services.AddScoped<IZapRunnerService, ZapRunnerService>();
 builder.Services.AddScoped<IScanExecutionService, ScanExecutionService>();
+builder.Services.AddScoped<INucleiRunnerService, NucleiRunnerService>();
+builder.Services.AddScoped<INucleiImportService, NucleiImportService>();
 
 builder.Services.AddHangfire(config =>
 {

@@ -10,21 +10,32 @@ public class ScanExecutionService : IScanExecutionService
     private readonly AppDbContext _context;
     private readonly IZapRunnerService _zapRunnerService;
     private readonly IZapImportService _zapImportService;
+    private readonly INucleiRunnerService _nucleiRunnerService;
+    private readonly INucleiImportService _nucleiImportService;
     private readonly ILogger<ScanExecutionService> _logger;
 
     public ScanExecutionService(
         AppDbContext context,
         IZapRunnerService zapRunnerService,
         IZapImportService zapImportService,
+        INucleiRunnerService nucleiRunnerService,
+        INucleiImportService nucleiImportService,
         ILogger<ScanExecutionService> logger)
     {
         _context = context;
         _zapRunnerService = zapRunnerService;
         _zapImportService = zapImportService;
+        _nucleiRunnerService = nucleiRunnerService;
+        _nucleiImportService = nucleiImportService;
         _logger = logger;
     }
 
     public async Task ExecuteZapScanAsync(int scanJobId)
+    {
+        await ExecuteScanAsync(scanJobId);
+    }
+
+    public async Task ExecuteScanAsync(int scanJobId)
     {
         var scanJob = await _context.ScanJobs
             .Include(x => x.Target)
@@ -35,51 +46,76 @@ public class ScanExecutionService : IScanExecutionService
 
         if (scanJob.Target == null)
         {
-            scanJob.Status = ScanStatus.Failed;
-            scanJob.CompletedAt = DateTime.UtcNow;
-            scanJob.Summary = "Scan failed: target not found.";
-            await _context.SaveChangesAsync();
+            await MarkFailed(scanJob.Id, "Target not found.");
             return;
         }
 
         try
         {
             scanJob.Status = ScanStatus.Running;
-            scanJob.Summary = "ZAP scan is running...";
+            scanJob.Summary = $"{scanJob.Tool} scan is running...";
             await _context.SaveChangesAsync();
 
-            var jsonFilePath = await _zapRunnerService.RunZapScanAsync(scanJobId, scanJob.Target.BaseUrl);
-            var importedRows = await _zapImportService.ImportFromJsonAsync(scanJobId, jsonFilePath);
+            var tool = scanJob.Tool.Trim();
+            var zapRows = 0;
+            var nucleiRows = 0;
 
-            var severityCounts = await _context.Findings
-                .Where(f => f.ScanJobId == scanJobId)
-                .GroupBy(f => f.Severity)
-                .Select(g => new { Severity = g.Key, Count = g.Count() })
+            if (IsZapEnabled(tool))
+            {
+                var zapFile = await _zapRunnerService.RunZapScanAsync(scanJobId, scanJob.Target.BaseUrl);
+                zapRows = await _zapImportService.ImportFromJsonAsync(scanJobId, zapFile);
+            }
+
+            if (IsNucleiEnabled(tool))
+            {
+                var nucleiFile = await _nucleiRunnerService.RunNucleiScanAsync(scanJobId, scanJob.Target.BaseUrl);
+                nucleiRows = await _nucleiImportService.ImportFromJsonLinesAsync(scanJobId, nucleiFile);
+            }
+
+            var findings = await _context.Findings
+                .Where(x => x.ScanJobId == scanJobId)
                 .ToListAsync();
-
-            var orderedSummaryParts = severityCounts
-                .OrderByDescending(x => SeverityHelper.Rank(x.Severity))
-                .Select(x => $"{x.Count} {x.Severity}")
-                .ToList();
 
             scanJob = await _context.ScanJobs.FirstAsync(x => x.Id == scanJobId);
             scanJob.Status = ScanStatus.Completed;
             scanJob.CompletedAt = DateTime.UtcNow;
             scanJob.ReportGeneratedAt = DateTime.UtcNow;
-            scanJob.Tool = "ZAP";
-            scanJob.Summary = $"ZAP execution completed successfully. {importedRows} finding rows imported. Breakdown: {string.Join(", ", orderedSummaryParts)}.";
+            scanJob.Summary = ScanSummaryHelper.BuildSummary(findings, zapRows, nucleiRows);
 
             await _context.SaveChangesAsync();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Stage 3 ZAP execution failed for ScanJob {ScanJobId}", scanJobId);
-
-            scanJob = await _context.ScanJobs.FirstAsync(x => x.Id == scanJobId);
-            scanJob.Status = ScanStatus.Failed;
-            scanJob.CompletedAt = DateTime.UtcNow;
-            scanJob.Summary = $"ZAP execution failed: {ex.Message}";
-            await _context.SaveChangesAsync();
+            _logger.LogError(ex, "Scan execution failed for ScanJob {ScanJobId}", scanJobId);
+            await MarkFailed(scanJobId, ex.Message);
         }
+    }
+
+    private async Task MarkFailed(int scanJobId, string reason)
+    {
+        var scan = await _context.ScanJobs.FirstOrDefaultAsync(x => x.Id == scanJobId);
+
+        if (scan == null)
+            return;
+
+        scan.Status = ScanStatus.Failed;
+        scan.CompletedAt = DateTime.UtcNow;
+        scan.Summary = $"Scan failed: {reason}";
+
+        await _context.SaveChangesAsync();
+    }
+
+    private static bool IsZapEnabled(string tool)
+    {
+        return tool.Equals("ZAP", StringComparison.OrdinalIgnoreCase)
+            || tool.Equals("ZAP+Nuclei", StringComparison.OrdinalIgnoreCase)
+            || tool.Equals("Both", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsNucleiEnabled(string tool)
+    {
+        return tool.Equals("Nuclei", StringComparison.OrdinalIgnoreCase)
+            || tool.Equals("ZAP+Nuclei", StringComparison.OrdinalIgnoreCase)
+            || tool.Equals("Both", StringComparison.OrdinalIgnoreCase);
     }
 }

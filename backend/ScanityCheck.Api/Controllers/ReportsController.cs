@@ -80,6 +80,41 @@ public class ReportsController : ControllerBase
             TopIssues = topIssues
         });
     }
+    [HttpGet("{scanJobId}/tool-comparison")]
+    public async Task<ActionResult<ToolComparisonResponse>> GetToolComparison(int scanJobId)
+    {
+        var currentUserId = GetCurrentUserId();
+        if (currentUserId == 0)
+            return Unauthorized();
+
+        var scan = await _context.ScanJobs
+            .Include(x => x.Findings)
+            .FirstOrDefaultAsync(x => x.Id == scanJobId);
+
+        if (scan == null)
+            return NotFound(new { message = "Scan not found." });
+
+        if (!IsAdminOrManager() && scan.StartedByUserId != currentUserId)
+            return Forbid();
+
+        var severityBreakdown = scan.Findings
+            .GroupBy(x => x.Severity.ToString())
+            .ToDictionary(x => x.Key, x => x.Count());
+
+        var toolBreakdown = scan.Findings
+            .GroupBy(x => x.SourceTool)
+            .ToDictionary(x => x.Key, x => x.Count());
+
+        return Ok(new ToolComparisonResponse
+        {
+            ScanJobId = scanJobId,
+            TotalFindings = scan.Findings.Count,
+            ZapFindings = scan.Findings.Count(x => x.SourceTool == "ZAP"),
+            NucleiFindings = scan.Findings.Count(x => x.SourceTool == "Nuclei"),
+            SeverityBreakdown = severityBreakdown,
+            ToolBreakdown = toolBreakdown
+        });
+    }
 
     [HttpGet("{scanJobId}/csv")]
     public async Task<IActionResult> ExportCsv(int scanJobId)

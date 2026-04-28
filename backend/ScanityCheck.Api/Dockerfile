@@ -15,13 +15,21 @@ RUN dotnet restore
 COPY . ./
 
 ARG ZAP_VERSION
+ARG NUCLEI_VERSION=3.3.9
 
-# Install Java and ZAP
 RUN apt-get update && \
-    apt-get install -y wget default-jre && \
+    apt-get install -y wget curl unzip default-jre && \
     wget https://github.com/zaproxy/zaproxy/releases/download/v${ZAP_VERSION}/ZAP_${ZAP_VERSION}_Linux.tar.gz && \
     tar -xvzf ZAP_${ZAP_VERSION}_Linux.tar.gz -C /opt && \
-    rm ZAP_${ZAP_VERSION}_Linux.tar.gz
+    rm ZAP_${ZAP_VERSION}_Linux.tar.gz && \
+    chmod +x /opt/ZAP_${ZAP_VERSION}/zap.sh && \
+    wget https://github.com/projectdiscovery/nuclei/releases/download/v${NUCLEI_VERSION}/nuclei_${NUCLEI_VERSION}_linux_amd64.zip && \
+    unzip nuclei_${NUCLEI_VERSION}_linux_amd64.zip && \
+    mv nuclei /usr/local/bin/nuclei && \
+    chmod +x /usr/local/bin/nuclei && \
+    rm nuclei_${NUCLEI_VERSION}_linux_amd64.zip && \
+    nuclei -version && \
+    nuclei -update-templates || true
 
 # Set persistent ENV inside the image
 ENV ZAP_INSTALLED_VERSION=${ZAP_VERSION}
