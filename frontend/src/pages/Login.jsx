@@ -79,7 +79,7 @@ function Login() {
   color: "#0f172a",
   fontWeight: "600"
 }}>
-  welcome backfghj legendd
+  Welcome!
 </h2>
       <input
         type="email"

@@ -197,7 +197,8 @@ setFindings(Array.isArray(data) ? data : []);
           background: "white",
           padding: "20px",
           borderRadius: "12px",
-          boxShadow: "0 10px 25px rgba(0,0,0,0.08)"
+          boxShadow: "0 10px 25px rgba(0,0,0,0.08)",
+          overflowX: "auto"
         }}
       >
         <h2
@@ -270,8 +271,8 @@ setFindings(Array.isArray(data) ? data : []);
                   </span>
                 </td>
 
-                <td style={{ padding: "12px", textAlign: "center" }}>{scan.startedAt}</td>
-                <td style={{ padding: "12px", textAlign: "center" }}>{scan.completedAt || "-"}</td>
+                <td style={{ padding: "12px", wordBreak: "break-all", textAlign: "center" }}>{scan.startedAt}</td>
+                <td style={{ padding: "12px", wordBreak: "break-all", textAlign: "center" }}>{scan.completedAt || "-"}</td>
                 <td style={{ padding: "12px", textAlign: "center" }}>{scan.summary}</td>
 
                 <td style={{ padding: "12px", textAlign: "center" }}>
