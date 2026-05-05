@@ -41,11 +41,10 @@ public class ZapImportService : IZapImportService
         if (zapReport == null || zapReport.Site.Count == 0)
             throw new Exception("Invalid ZAP report.");
 
-        var site = zapReport.Site[0];
-        var alerts = site.Alerts ?? new List<ZapAlert>();
-
-        if (!alerts.Any())
+        if (zapReport.Site == null || !zapReport.Site.SelectMany(s => s.Alerts ?? new List<ZapAlert>()).Any())
+        {
             throw new Exception("No alerts found in ZAP report.");
+        }
 
         var existingFindings = await _context.Findings
             .Where(f => f.ScanJobId == scanJobId)
@@ -61,80 +60,91 @@ public class ZapImportService : IZapImportService
 
         int importedRows = 0;
 
-        foreach (var alert in alerts)
+        foreach (var site in zapReport.Site.Where(s => s.Alerts != null))
         {
-            var instances = alert.Instances ?? new List<ZapInstance>();
-
-            if (!instances.Any())
+            foreach (var alert in site.Alerts)
             {
-                var endpoint = site.Name ?? "";
-                var normalized = FindingNormalizationHelper.NormalizeEndpoint(endpoint);
+                var instances = alert.Instances ?? new List<ZapInstance>();
 
-                _context.Findings.Add(new Finding
+                if (!instances.Any())
                 {
-                    ScanJobId = scanJobId,
-                    Title = alert.Alert ?? alert.Name ?? "Unknown Alert",
-                    Description = alert.Desc ?? "",
-                    Severity = SeverityHelper.FromZapRiskCode(alert.RiskCode),
-                    Endpoint = endpoint,
-                    NormalizedEndpoint = normalized,
-                    Recommendation = alert.Solution ?? "",
-                    SourceTool = "ZAP",
-                    Category = "ZAP Alert",
-                    CweId = NormalizeId(alert.CweId),
-                    WascId = NormalizeId(alert.WascId),
-                    AlertRef = alert.AlertRef,
-                    Confidence = alert.Confidence,
-                    RiskDescription = alert.RiskDesc,
-                    CreatedAt = DateTime.UtcNow
-                });
+                    var endpoint = site.Name ?? "";
+                    var normalized = FindingNormalizationHelper.NormalizeEndpoint(endpoint);
 
-                importedRows++;
-                continue;
-            }
-
-            foreach (var instance in instances)
-            {
-                var endpoint = instance.Uri ?? site.Name ?? "";
-                var normalized = FindingNormalizationHelper.NormalizeEndpoint(endpoint);
-
-                _context.Findings.Add(new Finding
-                {
-                    ScanJobId = scanJobId,
-                    Title = alert.Alert ?? alert.Name ?? "Unknown Alert",
-                    Description = alert.Desc ?? "",
-                    Severity = SeverityHelper.FromZapRiskCode(alert.RiskCode),
-                    Endpoint = endpoint,
-                    NormalizedEndpoint = normalized,
-                    Recommendation = alert.Solution ?? "",
-                    SourceTool = "ZAP",
-                    Category = "ZAP Alert",
-                    CweId = NormalizeId(alert.CweId),
-                    WascId = NormalizeId(alert.WascId),
-                    AlertRef = alert.AlertRef,
-                    Confidence = alert.Confidence,
-                    RiskDescription = alert.RiskDesc,
-                    CreatedAt = DateTime.UtcNow,
-                    EvidenceLogs = new List<EvidenceLog>
+                    _context.Findings.Add(new Finding
                     {
-                        new EvidenceLog
-                        {
-                            RequestData = $"{instance.Method} {instance.Uri}",
-                            ResponseData = null,
-                            Notes = alert.OtherInfo,
-                            HttpMethod = instance.Method,
-                            Parameter = instance.Param,
-                            Attack = instance.Attack,
-                            Evidence = instance.Evidence,
-                            OtherInfo = instance.OtherInfo,
-                            CreatedAt = DateTime.UtcNow
-                        }
-                    }
-                });
+                        ScanJobId = scanJobId,
+                        Title = alert.Alert ?? alert.Name ?? "Unknown Alert",
+                        Description = alert.Desc ?? "",
+                        Severity = SeverityHelper.FromZapRiskCode(alert.RiskCode),
+                        Endpoint = endpoint,
+                        NormalizedEndpoint = normalized,
+                        Recommendation = alert.Solution ?? "",
+                        SourceTool = "ZAP",
+                        Category = "ZAP Alert",
+                        CweId = NormalizeId(alert.CweId),
+                        WascId = NormalizeId(alert.WascId),
+                        AlertRef = alert.AlertRef,
+                        Confidence = alert.Confidence,
+                        RiskDescription = alert.RiskDesc,
+                        CreatedAt = DateTime.UtcNow
+                    });
 
-                importedRows++;
+                    importedRows++;
+                    continue;
+                }
+
+                foreach (var instance in instances)
+                {
+                    var endpoint = instance.Uri ?? site.Name ?? "";
+                    var normalized = FindingNormalizationHelper.NormalizeEndpoint(endpoint);
+
+                    _context.Findings.Add(new Finding
+                    {
+                        ScanJobId = scanJobId,
+                        Title = alert.Alert ?? alert.Name ?? "Unknown Alert",
+                        Description = alert.Desc ?? "",
+                        Severity = SeverityHelper.FromZapRiskCode(alert.RiskCode),
+                        Endpoint = endpoint,
+                        NormalizedEndpoint = normalized,
+                        Recommendation = alert.Solution ?? "",
+                        SourceTool = "ZAP",
+                        Category = "ZAP Alert",
+                        CweId = NormalizeId(alert.CweId),
+                        WascId = NormalizeId(alert.WascId),
+                        AlertRef = alert.AlertRef,
+                        Confidence = alert.Confidence,
+                        RiskDescription = alert.RiskDesc,
+                        CreatedAt = DateTime.UtcNow,
+                        EvidenceLogs = new List<EvidenceLog>
+                        {
+                            new EvidenceLog
+                            {
+                                RequestData = $"{instance.Method} {instance.Uri}",
+                                ResponseData = null,
+                                Notes = alert.OtherInfo,
+                                HttpMethod = instance.Method,
+                                Parameter = instance.Param,
+                                Attack = instance.Attack,
+                                Evidence = instance.Evidence,
+                                OtherInfo = instance.OtherInfo,
+                                CreatedAt = DateTime.UtcNow
+                            }
+                        }
+                    });
+
+                    importedRows++;
+                }
             }
         }
+
+        var newFindings = _context.Findings.Local
+            .Where(f => f.ScanJobId == scanJobId)
+            .ToList();
+
+        scanJob.Status = ScanStatus.Completed;
+        scanJob.CompletedAt = DateTime.UtcNow;
+        scanJob.Summary = ScanSummaryHelper.BuildSummary(newFindings, importedRows, 0);
 
         await _context.SaveChangesAsync();
 
