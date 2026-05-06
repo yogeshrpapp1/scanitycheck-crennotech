@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 
 
 
@@ -208,17 +208,17 @@ function Dashboard() {
         <div style={{ background: "white", padding: "20px", borderRadius: "12px", boxShadow: "0 10px 25px rgba(0,0,0,0.08)", marginBottom: "30px" }}>
           <h2 style={{ marginBottom: "18px", color: "#0f172a", fontWeight: "600" }}>Vulnerability Trends</h2>
           <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={chartData}>
+            <LineChart data={chartData}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Bar dataKey="Critical" fill="#ef4444" />
-              <Bar dataKey="High" fill="#f97316" />
-              <Bar dataKey="Medium" fill="#3b82f6" />
-              <Bar dataKey="Low" fill="#22c55e" />
-            </BarChart>
+              <Line type="monotone" dataKey="Critical" stroke="#ef4444" strokeWidth={2} dot={true} />
+              <Line type="monotone" dataKey="High" stroke="#f97316" strokeWidth={2} dot={true} />
+              <Line type="monotone" dataKey="Medium" stroke="#3b82f6" strokeWidth={2} dot={true} />
+              <Line type="monotone" dataKey="Low" stroke="#22c55e" strokeWidth={2} dot={true} />
+            </LineChart>
           </ResponsiveContainer>
         </div>
 
