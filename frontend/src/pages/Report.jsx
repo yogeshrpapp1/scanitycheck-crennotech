@@ -1,3 +1,4 @@
+// Report page - findings drill-down, HTML fix, mark as resolved
 import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 
