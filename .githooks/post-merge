@@ -1,0 +1,69 @@
+#!/bin/bash
+
+# 1. Check if package.json or package-lock.json changed in the last pull
+# ORIG_HEAD is where you were; HEAD is where you are after the merge/pull
+changed_files="$(git diff-tree -r --name-only --no-commit-id ORIG_HEAD HEAD)"
+
+if echo "$changed_files" | grep -qE "package.json|package-lock.json"; then
+    echo "Dependency changes detected in package.json or lockfile."
+
+    # 2. Check if Docker is running
+    if ! docker info > /dev/null 2>&1; then
+        echo "Docker is not running."
+        echo "Please start Docker and run this script manually to sync your frontend image:"
+        echo "./.git/hooks/post-merge"
+        exit 0
+    fi
+    
+    # 3. Prompt the user for confirmation
+    read -p "Do you want to rebuild the frontend image? (y/n): " confirm
+    if [[ $confirm != [yY] && $confirm != [yY][eE][sS] ]]; then
+        echo "Skipping rebuild. Note: Your current frontend image may be out of sync."
+        exit 0
+    fi
+
+    echo "Cleaning frontend container..."
+
+    # 4. Stop and remove frontend container
+    docker compose stop frontend 2>/dev/null
+    docker compose rm -f frontend 2>/dev/null
+
+    sleep 2
+
+    # 5. Handle the named volume
+    VOLUME_NAME=$(docker volume ls -q | grep "scanitycheck-crennotech_node_modules")
+    
+    if [ -n "$VOLUME_NAME" ]; then
+        echo "Removing stale volume: $VOLUME_NAME"
+        
+        if docker volume rm "$VOLUME_NAME" 2>/dev/null; then
+            echo "Volume deleted successfully."
+        else
+            echo "Volume busy, retrying in 3 seconds..."
+            sleep 3
+            
+            if docker volume rm "$VOLUME_NAME" 2>/dev/null; then
+                echo "Volume deleted on second attempt."
+            else
+                echo "--------------------------------------------------------"
+                echo "ERROR: Could not delete volume: $VOLUME_NAME"
+                echo "It is likely being used by another process or container."
+                echo "MANUAL ACTION REQUIRED: Run the following command before starting container:"
+                echo "docker volume rm $VOLUME_NAME"
+                echo "--------------------------------------------------------"
+            fi
+        fi
+    fi
+
+    # 6. Build fresh image
+    echo "Building new frontend image..."
+    docker compose build frontend
+
+    echo "----------------------------------------------------"
+    echo "Process complete."
+    echo "Next step: Run 'docker compose up frontend'"
+    echo "----------------------------------------------------"
+else
+    # Keep it quiet if nothing important changed
+    echo "No dependency changes detected. No rebuild necessary."
+fi
