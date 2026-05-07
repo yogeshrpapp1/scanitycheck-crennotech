@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using ScanityCheck.Api.Data;
@@ -102,5 +103,27 @@ public class AuthController : ControllerBase
             return Unauthorized();
 
         return Ok(user);
+    }
+
+    [HttpPost("logout")]
+    [Authorize]
+    public async Task<IActionResult> Logout([FromServices] IJwtBlacklistService blacklistService)
+    {
+        var authHeader = Request.Headers.Authorization.ToString();
+
+        if (string.IsNullOrWhiteSpace(authHeader) || !authHeader.StartsWith("Bearer "))
+            return BadRequest(new { message = "Bearer token is missing." });
+
+        var token = authHeader.Replace("Bearer ", "").Trim();
+
+        var handler = new JwtSecurityTokenHandler();
+        var jwtToken = handler.ReadJwtToken(token);
+
+        await blacklistService.RevokeTokenAsync(token, jwtToken.ValidTo);
+
+        return Ok(new
+        {
+            message = "Logged out successfully. Token has been revoked."
+        });
     }
 }

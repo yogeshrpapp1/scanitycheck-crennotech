@@ -4,6 +4,7 @@ using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
 using Microsoft.OpenApi.Models;
 using ScanityCheck.Api.Data;
 using ScanityCheck.Api.Services;
@@ -33,6 +34,7 @@ builder.Services.AddScoped<IZapRunnerService, ZapRunnerService>();
 builder.Services.AddScoped<IScanExecutionService, ScanExecutionService>();
 builder.Services.AddScoped<INucleiRunnerService, NucleiRunnerService>();
 builder.Services.AddScoped<INucleiImportService, NucleiImportService>();
+builder.Services.AddScoped<IJwtBlacklistService, JwtBlacklistService>();
 
 builder.Services.AddHangfire(config =>
 {
@@ -54,6 +56,25 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]!)
             )
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = async context =>
+            {
+                var rawToken = context.Request.Headers.Authorization
+                    .ToString()
+                    .Replace("Bearer ", "")
+                    .Trim();
+                if (string.IsNullOrWhiteSpace(rawToken))
+                    return;
+                var blacklistService = context.HttpContext.RequestServices
+                    .GetRequiredService<IJwtBlacklistService>();
+                var isRevoked = await blacklistService.IsTokenRevokedAsync(rawToken);
+                if (isRevoked)
+                {
+                    context.Fail("This token has been revoked.");
+                }
+            }
         };
     });
 

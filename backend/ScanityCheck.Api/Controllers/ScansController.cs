@@ -214,7 +214,7 @@ public class ScansController : ControllerBase
             return NotFound(new { message = "Scan not found." });
 
         var findings = await _context.Findings
-            .Where(f => f.ScanJobId == id)
+            .Where(f => f.ScanJobId == id && f.IsResolved != true)
             .Include(f => f.EvidenceLogs)
             .OrderByDescending(f => f.Id)
             .Select(f => new FindingResponse
@@ -235,6 +235,7 @@ public class ScansController : ControllerBase
                 Confidence = f.Confidence,
                 RiskDescription = f.RiskDescription,
                 CreatedAt = f.CreatedAt,
+                IsResolved = f.IsResolved,
                 EvidenceLogs = f.EvidenceLogs.Select(e => new EvidenceLogResponse
                 {
                     Id = e.Id,
@@ -268,7 +269,7 @@ public class ScansController : ControllerBase
             return NotFound(new { message = "Scan not found." });
 
         var findings = await _context.Findings
-            .Where(f => f.ScanJobId == id)
+            .Where(f => f.ScanJobId == id && f.IsResolved != true)
             .ToListAsync();
 
         var grouped = findings

@@ -18,7 +18,7 @@ public class FindingResponse
     public string? AlertRef { get; set; }
     public string? Confidence { get; set; }
     public string? RiskDescription { get; set; }
-
+    public bool? IsResolved { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<EvidenceLogResponse> EvidenceLogs { get; set; } = new();
 }

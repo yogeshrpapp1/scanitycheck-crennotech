@@ -14,6 +14,7 @@ public class AppDbContext : DbContext
     public DbSet<ScanJob> ScanJobs => Set<ScanJob>();
     public DbSet<Finding> Findings => Set<Finding>();
     public DbSet<EvidenceLog> EvidenceLogs => Set<EvidenceLog>();
+    public DbSet<RevokedToken> RevokedTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
