@@ -33,7 +33,7 @@ public class NucleiRunnerService : INucleiRunnerService
         var outputFile = Path.Combine(reportsFolder, $"nuclei-report-scan-{scanJobId}.jsonl");
 
         var arguments =
-            $"-u \"{targetUrl}\" -jsonl -o \"{outputFile}\" -severity info,low,medium,high,critical -silent -duc";
+            $"-u \"{targetUrl}\" -rate-limit 50 -timeout 5 -jsonl -o \"{outputFile}\" -severity info,low,medium,high,critical -silent -duc";
 
         if (!string.IsNullOrWhiteSpace(templatesPath) && Directory.Exists(templatesPath))
         {
