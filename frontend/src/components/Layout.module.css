@@ -1,0 +1,23 @@
+.mobileHeader {
+  background-color: var(--mantine-color-blue-filled); /* Match your Navbar color */
+  border-bottom: 1px solid var(--mantine-color-blue-7);
+}
+
+.version {
+  background-color: var(--mantine-color-blue-7);
+  color: var(--mantine-color-white);
+  opacity: 0.8;
+  flex-shrink: 0;
+  @media (max-width: 20em) {
+    display: none;
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.blinkingCursor {
+  animation: blink 1.5s step-end infinite;
+}
