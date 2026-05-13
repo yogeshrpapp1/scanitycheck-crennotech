@@ -3,10 +3,8 @@ import { Register } from '@/components/Register/Register';
 
 export function RegisterPage() {
   return (
-    <>
-      <Center mih="100vh" py="md">
-        <Register />
-      </Center>
-    </>
+    <Center mih="100vh" py="md">
+      <Register />
+    </Center>
   );
 }

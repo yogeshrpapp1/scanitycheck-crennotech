@@ -7,6 +7,8 @@ import { TargetsPage } from './pages/Targets.page';
 import { ScansPage } from './pages/Scans.page';
 import { SettingsPage } from './pages/Settings.page';
 import { UsersPage } from './pages/Users.page';
+import { NotFoundPage } from './pages/NotFound.page';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 const router = createBrowserRouter([
   // Path WITHOUT Navbar
@@ -23,27 +25,36 @@ const router = createBrowserRouter([
 
   // Paths WITH Navbar
   {
-    element: <Layout />,
+    element: <ProtectedRoute />,
     children: [
       {
-        path: 'dashboard',      
-        element: <DashboardPage />,
-      },
-      {
-        path: 'targets',      
-        element: <TargetsPage />,
-      },
-      {
-        path: 'scans',      
-        element: <ScansPage />,
-      },
-      {
-        path: 'settings',      
-        element: <SettingsPage />,
-      },
-      {
-        path: 'users',      
-        element: <UsersPage />,
+        element: <Layout />,
+        children: [
+          {
+            path: 'dashboard',      
+            element: <DashboardPage />,
+          },
+          {
+            path: 'targets',      
+            element: <TargetsPage />,
+          },
+          {
+            path: 'scans',      
+            element: <ScansPage />,
+          },
+          {
+            path: 'settings',      
+            element: <SettingsPage />,
+          },
+          {
+            path: 'users',      
+            element: <UsersPage />,
+          },
+          {
+            path: '*',
+            element: <NotFoundPage />
+          },
+        ]
       },
     ]
   },
