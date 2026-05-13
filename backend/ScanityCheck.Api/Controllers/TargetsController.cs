@@ -31,6 +31,7 @@ public class TargetsController : ControllerBase
                 BaseUrl = x.BaseUrl,
                 OpenApiUrl = x.OpenApiUrl,
                 RequiresAuth = x.RequiresAuth,
+                AuthHeader = x.AuthHeader,
                 ClientName = x.ClientName,
                 ProductName = x.ProductName,
                 Environment = x.Environment,
@@ -57,6 +58,7 @@ public class TargetsController : ControllerBase
             BaseUrl = request.BaseUrl.Trim(),
             OpenApiUrl = request.OpenApiUrl?.Trim(),
             RequiresAuth = request.RequiresAuth,
+            AuthHeader = request.AuthHeader,
             ClientName = request.ClientName?.Trim(),
             ProductName = request.ProductName?.Trim(),
             Environment = request.Environment.Trim(),
@@ -74,6 +76,50 @@ public class TargetsController : ControllerBase
             BaseUrl = target.BaseUrl,
             OpenApiUrl = target.OpenApiUrl,
             RequiresAuth = target.RequiresAuth,
+            ClientName = target.ClientName,
+            ProductName = target.ProductName,
+            AuthHeader = target.AuthHeader,
+            Environment = target.Environment,
+            Notes = target.Notes,
+            CreatedByUserId = target.CreatedByUserId,
+            CreatedAt = target.CreatedAt
+        });
+    }
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin,Manager")]
+    public async Task<ActionResult<TargetResponse>> Update(int id, UpdateTargetRequest request)
+    {
+        var target = await _context.ScanTargets
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (target == null)
+            return NotFound(new { message = "Target not found." });
+
+        target.Name = request.Name.Trim();
+        target.BaseUrl = request.BaseUrl.Trim();
+        target.OpenApiUrl = request.OpenApiUrl?.Trim();
+
+        target.RequiresAuth = request.RequiresAuth;
+
+        target.AuthHeader = request.AuthHeader;
+
+        target.ClientName = request.ClientName?.Trim();
+        target.ProductName = request.ProductName?.Trim();
+        target.Environment = request.Environment.Trim();
+        target.Notes = request.Notes?.Trim();
+
+        await _context.SaveChangesAsync();
+
+        return Ok(new TargetResponse
+        {
+            Id = target.Id,
+            Name = target.Name,
+            BaseUrl = target.BaseUrl,
+            OpenApiUrl = target.OpenApiUrl,
+            RequiresAuth = target.RequiresAuth,
+
+            AuthHeader = target.AuthHeader,
+
             ClientName = target.ClientName,
             ProductName = target.ProductName,
             Environment = target.Environment,

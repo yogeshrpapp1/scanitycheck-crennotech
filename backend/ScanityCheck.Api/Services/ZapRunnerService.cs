@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using ScanityCheck.Api.Models;
 
 namespace ScanityCheck.Api.Services;
 
@@ -6,14 +7,19 @@ public class ZapRunnerService : IZapRunnerService
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<ZapRunnerService> _logger;
+    private readonly IScanCommandBuilder _commandBuilder;
 
-    public ZapRunnerService(IConfiguration configuration, ILogger<ZapRunnerService> logger)
+    public ZapRunnerService(
+        IConfiguration configuration,
+        ILogger<ZapRunnerService> logger,
+        IScanCommandBuilder commandBuilder)
     {
         _configuration = configuration;
         _logger = logger;
+        _commandBuilder = commandBuilder;
     }
 
-    public async Task<string> RunZapScanAsync(int scanJobId, string targetUrl)
+    public async Task<string> RunZapScanAsync(int scanJobId, ScanTarget target)
     {
         var zapPath = _configuration["ZapSettings:ZapPath"];
         var reportsFolder = _configuration["ZapSettings:ReportsFolder"];
@@ -25,18 +31,15 @@ public class ZapRunnerService : IZapRunnerService
             throw new Exception($"ZAP executable not found at: {zapPath}");
 
         if (string.IsNullOrWhiteSpace(reportsFolder))
-            throw new Exception("Reports folder is not configured.");
+            throw new Exception("ZAP reports folder is not configured.");
 
         Directory.CreateDirectory(reportsFolder);
 
         var outputFile = Path.Combine(reportsFolder, $"zap-report-scan-{scanJobId}.json");
-        var zapWorkingDirectory = Path.GetDirectoryName(zapPath)!;
+        var workingDirectory = Path.GetDirectoryName(zapPath)!;
 
-        var arguments =
-            $"-cmd -port 8090 -quickurl \"{targetUrl}\" -quickout \"{outputFile}\"";
+        var arguments = _commandBuilder.BuildZapArguments(target, outputFile);
 
-        _logger.LogInformation("ZAP path: {ZapPath}", zapPath);
-        _logger.LogInformation("ZAP working dir: {ZapWorkingDirectory}", zapWorkingDirectory);
         _logger.LogInformation("ZAP args: {Arguments}", arguments);
 
         var process = new Process
@@ -45,7 +48,7 @@ public class ZapRunnerService : IZapRunnerService
             {
                 FileName = zapPath,
                 Arguments = arguments,
-                WorkingDirectory = zapWorkingDirectory,
+                WorkingDirectory = workingDirectory,
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 UseShellExecute = false,
@@ -55,26 +58,24 @@ public class ZapRunnerService : IZapRunnerService
 
         process.Start();
 
-        var stdOutTask = process.StandardOutput.ReadToEndAsync();
-        var stdErrTask = process.StandardError.ReadToEndAsync();
+        var stdoutTask = process.StandardOutput.ReadToEndAsync();
+        var stderrTask = process.StandardError.ReadToEndAsync();
 
         await process.WaitForExitAsync();
 
-        var stdOut = await stdOutTask;
-        var stdErr = await stdErrTask;
+        var stdout = await stdoutTask;
+        var stderr = await stderrTask;
 
-        _logger.LogInformation("ZAP stdout:\n{StdOut}", stdOut);
+        _logger.LogInformation("ZAP stdout:\n{StdOut}", stdout);
 
-        if (!string.IsNullOrWhiteSpace(stdErr))
-            _logger.LogError("ZAP stderr:\n{StdErr}", stdErr);
-
-        _logger.LogInformation("ZAP exit code: {ExitCode}", process.ExitCode);
+        if (!string.IsNullOrWhiteSpace(stderr))
+            _logger.LogWarning("ZAP stderr:\n{StdErr}", stderr);
 
         if (process.ExitCode != 0)
-            throw new Exception($"ZAP scan process failed with exit code {process.ExitCode}. Error: {stdErr}");
+            throw new Exception($"ZAP failed with exit code {process.ExitCode}. Error: {stderr}");
 
         if (!File.Exists(outputFile))
-            throw new Exception("ZAP finished but output report file was not created.");
+            throw new Exception($"ZAP report was not generated at: {outputFile}");
 
         return outputFile;
     }

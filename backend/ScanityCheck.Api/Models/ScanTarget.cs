@@ -14,6 +14,8 @@ public class ScanTarget
     public string Environment { get; set; } = "Development";
     public string? Notes { get; set; }
 
+    public string? AuthHeader { get; set; }
+
     public int CreatedByUserId { get; set; }
     public AppUser? CreatedByUser { get; set; }
 

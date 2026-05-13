@@ -23,6 +23,8 @@ public class CreateTargetRequest
     [MaxLength(150)]
     public string? ProductName { get; set; }
 
+    public string? AuthHeader { get; set; }
+
     [Required]
     [MaxLength(50)]
     public string Environment { get; set; } = "Development";
