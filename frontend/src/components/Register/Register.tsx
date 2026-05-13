@@ -17,7 +17,7 @@ const getStrength = (password: string) => {
 export function Register() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(8);
   const navigate = useNavigate();
 
   const form = useForm({
@@ -97,10 +97,10 @@ export function Register() {
         {submitted ? 'Welcome!' : 'Create Account'}
       </Title>
 
-      <Paper withBorder shadow="sm" p={22} mt={20} radius="md">
+      <Paper withBorder shadow="sm" p="lg" mt="lg" radius="md">
         {submitted ? (
           /* --- SUCCESS VIEW --- */
-          <Stack align="center" gap="md" py="xl">
+          <Stack align="center" gap="md">
             <ThemeIcon color="teal" size={60} radius="xl" variant="light">
                <IconCheck size={38} stroke={2.5} />
             </ThemeIcon>

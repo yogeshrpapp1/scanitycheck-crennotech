@@ -22,7 +22,7 @@ export function Login() {
         Welcome!
       </Title>
 
-      <Paper withBorder shadow="sm" p={22} mt={20} radius="md">
+      <Paper withBorder shadow="sm" p="lg" mt="lg" radius="md">
         <TextInput label="Email" placeholder="your@email.com" required radius="md" />
         <PasswordInput label="Password" placeholder="Your password" required mt="md" radius="md" />
         <Button fullWidth mt="xl" radius="md" onClick={() => navigate('/dashboard')}>
