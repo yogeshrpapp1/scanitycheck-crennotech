@@ -47,7 +47,7 @@ public class ZapImportService : IZapImportService
         }
 
         var existingFindings = await _context.Findings
-            .Where(f => f.ScanJobId == scanJobId)
+            .Where(f => f.ScanJobId == scanJobId && f.SourceTool == "ZAP")
             .Include(f => f.EvidenceLogs)
             .ToListAsync();
 

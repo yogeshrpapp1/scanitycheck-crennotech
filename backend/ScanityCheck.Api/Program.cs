@@ -35,6 +35,7 @@ builder.Services.AddScoped<IScanExecutionService, ScanExecutionService>();
 builder.Services.AddScoped<INucleiRunnerService, NucleiRunnerService>();
 builder.Services.AddScoped<INucleiImportService, NucleiImportService>();
 builder.Services.AddScoped<IJwtBlacklistService, JwtBlacklistService>();
+builder.Services.AddScoped<IScanCommandBuilder, ScanCommandBuilder>();
 
 builder.Services.AddHangfire(config =>
 {

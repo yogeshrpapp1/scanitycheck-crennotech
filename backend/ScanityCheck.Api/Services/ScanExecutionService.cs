@@ -60,17 +60,22 @@ public class ScanExecutionService : IScanExecutionService
             var zapRows = 0;
             var nucleiRows = 0;
 
-            if (IsZapEnabled(tool))
-            {
-                var zapFile = await _zapRunnerService.RunZapScanAsync(scanJobId, scanJob.Target.BaseUrl);
-                zapRows = await _zapImportService.ImportFromJsonAsync(scanJobId, zapFile);
-            }
 
             if (IsNucleiEnabled(tool))
             {
-                var nucleiFile = await _nucleiRunnerService.RunNucleiScanAsync(scanJobId, scanJob.Target.BaseUrl);
+                _logger.LogInformation("Starting Nuclei for ScanJob {ScanJobId}", scanJobId);
+                var nucleiFile = await _nucleiRunnerService.RunNucleiScanAsync(scanJobId, scanJob.Target);
                 nucleiRows = await _nucleiImportService.ImportFromJsonLinesAsync(scanJobId, nucleiFile);
             }
+
+            if (IsZapEnabled(tool))
+            {
+                _logger.LogInformation("Starting ZAP for ScanJob {ScanJobId}", scanJobId);
+                var zapFile = await _zapRunnerService.RunZapScanAsync(scanJobId, scanJob.Target);
+                zapRows = await _zapImportService.ImportFromJsonAsync(scanJobId, zapFile);
+            }
+
+
 
             var findings = await _context.Findings
                 .Where(x => x.ScanJobId == scanJobId)
