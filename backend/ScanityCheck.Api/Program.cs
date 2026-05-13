@@ -8,6 +8,7 @@ using System.IdentityModel.Tokens.Jwt;
 using Microsoft.OpenApi.Models;
 using ScanityCheck.Api.Data;
 using ScanityCheck.Api.Services;
+using AspNetCore.Swagger.Themes;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -97,7 +98,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter: Bearer {your token}"
+        Description = "Enter JWT Bearer token **only**"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -143,7 +144,12 @@ app.UseExceptionHandler(errorApp =>
 });
 
 app.UseSwagger();
-app.UseSwaggerUI();
+app.UseSwaggerUI(Theme.Dark, options => 
+{
+    options.SwaggerEndpoint("v1/swagger.json", "ScanityCheck API v1");
+    options.EnableThemeSwitcher();
+});
+
 
 app.UseHttpsRedirection();
 
