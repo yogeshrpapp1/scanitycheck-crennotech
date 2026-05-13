@@ -6,7 +6,7 @@ export default defineConfig({
 
   server: {
     proxy: {
-      '/api': {
+      '^/(api|hangfire|swagger)': {
         target: 'http://api:8080', 
         changeOrigin: true,
         secure: false,

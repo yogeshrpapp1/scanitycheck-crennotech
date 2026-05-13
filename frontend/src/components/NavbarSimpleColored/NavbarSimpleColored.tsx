@@ -19,8 +19,6 @@ import classes from './NavbarSimpleColored.module.css';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { DarkModeToggle } from '../DarkModeToggle/DarkModeToggle';
 
-const API_BASE = import.meta.env.VITE_API_URL;
-
 type NavItem = {
   type: 'internal' | 'external' | 'action';
   label: string;
@@ -39,8 +37,8 @@ const generalData: NavItem[] = [
 
 const adminData: NavItem[] = [
   { type: 'internal', label: 'Users', icon: IconUsers, link: '/users', },
-  { type: 'external', label: 'Hangfire', icon: IconSquareLetterH, link: `${API_BASE}/hangfire`, },
-  { type: 'external', label: 'Swagger UI Docs', icon: IconCodeDots, link: `${API_BASE}/swagger`, },
+  { type: 'external', label: 'Hangfire', icon: IconSquareLetterH, link: '/hangfire', },
+  { type: 'external', label: 'Swagger UI Docs', icon: IconCodeDots, link: '/swagger', },
 ];
 
 const currentUser = {

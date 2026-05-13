@@ -54,7 +54,6 @@ services:
       target: development           # Change to 'production' later
     environment:
       CHOKIDAR_USEPOLLING: "true"   # Uncomment this if hot-reload fails
-      VITE_API_URL: "http://localhost:8080"
     ports:
       - "5173:5173"                 # DEV: Mapping host 5173 to Vite 5173
       # - "80:80"                   # PROD: Mapping host 80 to Nginx 80
