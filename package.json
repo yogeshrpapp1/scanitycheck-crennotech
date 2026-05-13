@@ -1,7 +1,0 @@
-{
-  "dependencies": {
-    "@mantine/core": "^9.1.1",
-    "@mantine/form": "^9.1.1",
-    "@mantine/hooks": "^9.1.1"
-  }
-}
