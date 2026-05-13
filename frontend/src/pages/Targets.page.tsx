@@ -17,29 +17,27 @@ export function TargetsPage() {
   const [opened, { open, close }] = useDisclosure(false);
 
   return (
-    <>
-      <Stack gap="lg" p="md">
-        <Group justify="space-between">
-          <Title order={2}>Targets</Title>
-          {/* Step 1: Add a button to open the modal */}
-          <Button onClick={open}>Add Target</Button>
-        </Group>
+    <Stack gap="lg" p="md">
+      <Group justify="space-between">
+        <Title order={2}>Targets</Title>
+        {/* Step 1: Add a button to open the modal */}
+        <Button onClick={open}>Add Target</Button>
+      </Group>
 
-        {/* Step 2: Wrap your form in the Modal */}
-        <Modal 
-          opened={opened} 
-          onClose={close} 
-          title="Input New Target Information" 
-          centered
-          size="lg"
-          scrollAreaComponent={CustomScrollArea}
-        >
-          {/* Step 3: Pass 'close' to the form so it can shut the modal on save */}
-          <TargetsForm closeModal={close} />
-        </Modal>
+      {/* Step 2: Wrap your form in the Modal */}
+      <Modal 
+        opened={opened} 
+        onClose={close} 
+        title="Input New Target Information" 
+        centered
+        size="lg"
+        scrollAreaComponent={CustomScrollArea}
+      >
+        {/* Step 3: Pass 'close' to the form so it can shut the modal on save */}
+        <TargetsForm closeModal={close} />
+      </Modal>
 
-        <TargetsTable />
-      </Stack>
-    </>
+      <TargetsTable />
+    </Stack>
   );
 }
