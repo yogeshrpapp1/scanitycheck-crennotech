@@ -4,6 +4,7 @@ import { Button, TextInput, PasswordInput, Paper, Title, Container, Stack, Text,
 import { useForm } from '@mantine/form';
 import { Link, useNavigate } from 'react-router-dom';
 import { IconCheck } from '@tabler/icons-react';
+import { registerUser } from '@/api/auth';
 
 const getStrength = (password: string) => {
   let s = 0;
@@ -18,6 +19,7 @@ export function Register() {
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [countdown, setCountdown] = useState(8);
+  const [livePassword, setLivePassword] = useState('');
   const navigate = useNavigate();
 
   const form = useForm({
@@ -38,44 +40,29 @@ export function Register() {
     },
   });
 
-  const passwordValue = form.getValues().password || '';
-  const strength = getStrength(passwordValue);
+  form.watch('password', ({ value }) => {
+    setLivePassword(value || '');
+  });
+
+  const strength = getStrength(livePassword);
   const strengthColor = strength === 4 ? 'teal' : strength > 2 ? 'yellow' : 'red';
 
   const handleSubmit = async (values: typeof form.values) => {
     setLoading(true);
 
-    // --- START DUMMY TEST ---
-    await new Promise((resolve) => setTimeout(resolve, 1500)); // Wait 1.5s
-    setSubmitted(true);
-    setLoading(false);
-    // --- END DUMMY TEST ---
-
-    // try {
-    //   const response = await fetch('/api/register', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({
-    //       fullName: values.fullName,
-    //       email: values.email,
-    //       password: values.password,
-    //     }),
-    //   });
-
-    //   if (!response.ok) {throw new Error('Registration failed');}
+    try {
+      await registerUser({
+        fullName: values.fullName,
+        email: values.email,
+        password: values.password,
+      });
       
-    //   setSubmitted(true);
-
-    //   const data = await response.json();
-    //   // oxlint-disable-next-line no-console
-    //   console.log('Account created successfully', data);
-    // } catch (error) {
-    //   // oxlint-disable-next-line no-console
-    //   console.error('Registration Error:', error);
-    //   form.setFieldError('email', 'Email already exists or server is unreachable');
-    // } finally {
-    //   setLoading(false);
-    // }
+      setSubmitted(true);
+    } catch (error: any) {
+      form.setFieldError('email', error.message || 'Registration failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -121,6 +108,7 @@ export function Register() {
               label="Full Name"
               placeholder="John Smith"
               required
+              key={form.key('fullName')}
               {...form.getInputProps('fullName')}
             />
 
@@ -129,6 +117,7 @@ export function Register() {
               placeholder="your@email.com"
               required
               mt="md"
+              key={form.key('email')}
               {...form.getInputProps('email')}
             />
 
@@ -138,23 +127,20 @@ export function Register() {
                 placeholder="Your password"
                 required
                 mt="md"
+                key={form.key('password')}
                 {...form.getInputProps('password')}
-                onChange={(event) => {
-                  form.setFieldValue('password', event.currentTarget.value);
-                }}
               />
 
               <Progress 
                   color={strengthColor} 
-                  value={passwordValue.length > 0 ? (strength / 4) * 100 : 0} 
+                  value={livePassword.length > 0 ? (strength / 4) * 100 : 0} 
                   size={5} 
                   mt="xs" 
               />
 
               <Text c="dimmed" size="xs" mt={5}>
-                  Strength: {passwordValue.length === 0 ? 'Enter password' : strength === 4 ? 'Strong' : strength > 2 ? 'Medium' : 'Weak'}
+                  Strength: {livePassword.length === 0 ? 'Enter password' : strength === 4 ? 'Strong' : strength > 2 ? 'Medium' : 'Weak'}
               </Text>
-
             </Box>
 
             <PasswordInput
@@ -162,6 +148,7 @@ export function Register() {
               placeholder="Repeat password"
               required
               mt="md"
+              key={form.key('confirmPassword')}
               {...form.getInputProps('confirmPassword')}
             />
               <Button type="submit" fullWidth mt="xl" loading={loading}>

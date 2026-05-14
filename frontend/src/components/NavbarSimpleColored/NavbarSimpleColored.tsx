@@ -18,6 +18,8 @@ import { modals } from '@mantine/modals';
 import classes from './NavbarSimpleColored.module.css';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { DarkModeToggle } from '../DarkModeToggle/DarkModeToggle';
+import { logoutUser } from '@/api/auth';
+import { useEffect, useState } from 'react';
 
 type NavItem = {
   type: 'internal' | 'external' | 'action';
@@ -41,12 +43,6 @@ const adminData: NavItem[] = [
   { type: 'external', label: 'Swagger UI Docs', icon: IconCodeDots, link: '/swagger', },
 ];
 
-const currentUser = {
-    name: "Robert Glassbreaker",
-    role: "Admin",
-    email: "robert@glassbreaker.io",
-  };
-
 export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggle: () => void; }) {
   const handleMobileClose = () => {
     if (window.innerWidth < 768) {
@@ -55,6 +51,26 @@ export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggl
   };  
   
   const navigate = useNavigate();
+
+  const [user, setUser] = useState<{ name: string; role: string; email: string } | null>(null);
+  
+  useEffect(() => {
+    const savedUser = localStorage.getItem('user');
+    
+    if (savedUser) {
+      try {
+        const parsedUser = JSON.parse(savedUser);
+        setUser({
+          name: parsedUser.fullName || 'First Last',
+          email: parsedUser.email || 'email@email',
+          role: parsedUser.role || 'Role',
+        });
+      } catch (error) {
+        // If JSON is malformed, clear it
+        localStorage.removeItem('user');
+      }
+    }
+  }, []);
   
   const footerData: NavItem[] = [
     { type: 'action', label: 'Logout', icon: IconLogout,
@@ -69,7 +85,12 @@ export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggl
           ),
           labels: { confirm: 'Logout', cancel: 'Cancel' },
           confirmProps: { color: 'red' },
-          onConfirm: () => navigate('/'),
+          onConfirm: async () => {
+            await logoutUser();
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            navigate('/', { replace: true });
+          },
         });
       },
     },
@@ -165,7 +186,7 @@ export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggl
           {renderLinks(generalData)}
           
           {/* Admin Section: Conditionally Rendered */}
-          {currentUser.role === 'Admin' && (
+          {user?.role === 'Admin' && (
             <>
               <Divider 
                 my="md" 
@@ -200,17 +221,17 @@ export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggl
             {/* Column 2: User Text Info */}
             <div style={{ flex: 1, minWidth: 0 }}>
               <Text fz="xs" c="gray.5" tt="uppercase" fw={700} style={{ wordBreak: 'break-word', overflowWrap: 'break-word'}}>
-                {currentUser.role}
+                {user?.role || 'Loading...'}
               </Text>
 
               <Text fz="md" c="white" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }} >
-                {currentUser.name}
+                {user?.name || 'Loading...'}
               </Text>
 
               <Group wrap="nowrap" gap={5} mt={3} align="flex-start">
                 <IconAt stroke={1.5} size={16} color="var(--mantine-color-gray-5)" style={{ flexShrink: 0, marginTop: 1 }}/>
                 <Text fz="xs" c="gray.5" style={{ wordBreak: 'break-all' }}>
-                  {currentUser.email}
+                  {user?.email || 'Loading...'}
                 </Text>
               </Group>
             </div>
