@@ -15,11 +15,12 @@ import {
 
 import { Avatar, Box, Code, Divider, Group, ScrollArea, Stack, Text, UnstyledButton } from '@mantine/core';
 import { modals } from '@mantine/modals';
+import { notifications } from '@mantine/notifications';
 import classes from './NavbarSimpleColored.module.css';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { DarkModeToggle } from '../DarkModeToggle/DarkModeToggle';
 import { logoutUser } from '@/api/auth';
-import { useEffect, useState } from 'react';
+import { useAuth } from '@/context/AuthContext';
 
 type NavItem = {
   type: 'internal' | 'external' | 'action';
@@ -37,12 +38,6 @@ const generalData: NavItem[] = [
   { type: 'internal', label: 'Settings', icon: IconSettings, link: '/settings', },
 ];
 
-const adminData: NavItem[] = [
-  { type: 'internal', label: 'Users', icon: IconUsers, link: '/users', },
-  { type: 'external', label: 'Hangfire', icon: IconSquareLetterH, link: '/hangfire', },
-  { type: 'external', label: 'Swagger UI Docs', icon: IconCodeDots, link: '/swagger', },
-];
-
 export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggle: () => void; }) {
   const handleMobileClose = () => {
     if (window.innerWidth < 768) {
@@ -51,26 +46,36 @@ export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggl
   };  
   
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
-  const [user, setUser] = useState<{ name: string; role: string; email: string } | null>(null);
-  
-  useEffect(() => {
-    const savedUser = localStorage.getItem('user');
+  const handleSecureRedirect = async (targetPath: string) => {
+    const token = localStorage.getItem('token');
     
-    if (savedUser) {
-      try {
-        const parsedUser = JSON.parse(savedUser);
-        setUser({
-          name: parsedUser.fullName || 'First Last',
-          email: parsedUser.email || 'email@email',
-          role: parsedUser.role || 'Role',
-        });
-      } catch (error) {
-        // If JSON is malformed, clear it
-        localStorage.removeItem('user');
-      }
+    try {
+      // Request backend to set the HttpOnly cookie for this JWT
+      // Adjust the URL to match your .NET controller route
+      await fetch(`/api/auth/set-session?token=${token}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+
+      // Open the resource in a new tab
+      // The browser now has the cookie and will send it to /hangfire or /swagger
+      window.open(targetPath, '_blank');
+    } catch (error) {
+      notifications.show({
+        title: 'Access Denied',
+        message: 'Failed to establish a secure session. Please try logging in again.',
+        color: 'red',
+      });
     }
-  }, []);
+  };
+
+  const adminData: NavItem[] = [
+  { type: 'internal', label: 'Users', icon: IconUsers, link: '/users', },
+  { type: 'action', label: 'Hangfire', icon: IconSquareLetterH, onClick: () => handleSecureRedirect('/hangfire'), },
+  { type: 'action', label: 'Swagger UI Docs', icon: IconCodeDots, onClick: () => handleSecureRedirect('/swagger'), },
+];
   
   const footerData: NavItem[] = [
     { type: 'action', label: 'Logout', icon: IconLogout,
@@ -86,11 +91,15 @@ export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggl
           labels: { confirm: 'Logout', cancel: 'Cancel' },
           confirmProps: { color: 'red' },
           onConfirm: async () => {
-            await logoutUser();
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-            navigate('/', { replace: true });
-          },
+            try {
+              await logoutUser();
+            } catch {
+              // Silently ignore the error and move to 'finally'
+            } finally {
+              logout();
+              navigate('/', { replace: true });
+            }
+          }
         });
       },
     },
@@ -154,8 +163,13 @@ export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggl
             width: '100%',
           }}
         >
-          <item.icon className={classes.linkIcon} stroke={1.5} />
-          <span>{item.label}</span>
+          <Box style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+            <item.icon className={classes.linkIcon} stroke={1.5} />
+            <span>{item.label}</span>
+          </Box>
+          {(item.label === 'Hangfire' || item.label === 'Swagger UI Docs') && (
+            <IconExternalLink size={14} stroke={1.5} className={classes.externalIcon} />
+          )}
         </UnstyledButton>
       );
     });
@@ -225,7 +239,7 @@ export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggl
               </Text>
 
               <Text fz="md" c="white" style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }} >
-                {user?.name || 'Loading...'}
+                {user?.fullName || 'Loading...'}
               </Text>
 
               <Group wrap="nowrap" gap={5} mt={3} align="flex-start">

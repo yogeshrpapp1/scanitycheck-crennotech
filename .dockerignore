@@ -13,6 +13,7 @@ Thumbs.db
 # Ignore build artifacts and large dependencies
 node_modules/
 
-# Ignore .NET build artifacts
+# Ignore .NET build artifacts and local launch settings
 bin/
 obj/
+launchSettings.json

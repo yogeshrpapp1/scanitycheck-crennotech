@@ -121,9 +121,41 @@ public class AuthController : ControllerBase
 
         await blacklistService.RevokeTokenAsync(token, jwtToken.ValidTo);
 
+        Response.Cookies.Delete("X-Auth-Token", new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true,
+            SameSite = SameSiteMode.Lax,
+            Path = "/" 
+        });
+
         return Ok(new
         {
-            message = "Logged out successfully. Token has been revoked."
+            message = "Logged out successfully. Token has been revoked and cookie cleared."
         });
+    }
+
+    [HttpGet("set-session")]
+    public IActionResult SetSession([FromQuery] string token, [FromServices] ITokenService tokenService)
+    {
+        // 1. Validate the token
+        var principal = tokenService.ValidateToken(token);
+        
+        if (principal == null)
+        {
+            return Unauthorized(new { message = "Invalid or expired token" });
+        }
+
+        // 2. Set the cookie
+        Response.Cookies.Append("X-Auth-Token", token, new CookieOptions
+        {
+            HttpOnly = true,
+            Secure = true, // In local dev without HTTPS, set this to false if needed
+            SameSite = SameSiteMode.Lax,
+            Expires = DateTimeOffset.UtcNow.AddHours(1),
+            Path = "/" // Important: ensures cookie is sent for /swagger and /hangfire
+        });
+
+        return Ok();
     }
 }

@@ -18,10 +18,11 @@ WORKDIR /app
 COPY *.csproj ./
 RUN dotnet restore
 COPY . ./
+RUN dotnet publish -c Release -o /publish
 # Note: In production, use 'dotnet publish' here
 
 # --- Stage 4: Final production image ---
-FROM mcr.microsoft.com/dotnet/sdk:8.0
+FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
 ARG ZAP_VERSION
@@ -38,8 +39,8 @@ COPY --from=nuclei-downloader /nuclei /usr/local/bin/nuclei
 RUN chmod +x /opt/ZAP_${ZAP_VERSION}/zap.sh && \
     chmod +x /usr/local/bin/nuclei
 
-# 3. Copy /app from builder stage
-COPY --from=dotnet-builder /app /app
+# 3. Copy /publish from builder stage
+COPY --from=dotnet-builder /publish .
 
 # 4. Set environment variables
 ENV ZAP_INSTALLED_VERSION=${ZAP_VERSION}
@@ -57,4 +58,4 @@ RUN nuclei -version && \
     chmod -R 755 /opt/nuclei-templates
 
 EXPOSE 8080
-ENTRYPOINT ["dotnet", "run", "--urls", "http://0.0.0.0:8080"]
+ENTRYPOINT ["dotnet", "ScanityCheck.Api.dll", "--urls", "http://0.0.0.0:8080"]

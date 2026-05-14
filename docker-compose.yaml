@@ -26,7 +26,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_ENVIRONMENT: Production
       ConnectionStrings__DefaultConnection: "Server=sql-server;Database=ScanityCheckDb;User Id=sa;Password=${MSSQL_SA_PASSWORD};TrustServerCertificate=True"
       Jwt__Key: ${JWT_KEY:?JWT_KEY must be defined in .env}
       Jwt__Issuer: ScanityCheck
@@ -39,9 +39,6 @@ services:
       NucleiSettings__ReportsFolder: /reports/nuclei
       NucleiSettings__TemplatesPath: /opt/nuclei-templates
     volumes:
-      - ./backend/ScanityCheck.Api:/app
-      - /app/bin
-      - /app/obj
       - ./reports:/reports
     depends_on:
       sql-server:

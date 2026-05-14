@@ -14,9 +14,11 @@ import { Link, useNavigate } from 'react-router-dom';
 import { DarkModeToggle } from '../DarkModeToggle/DarkModeToggle';
 import { useState } from 'react';
 import { loginUser } from '@/api/auth';
+import { useAuth } from '@/context/AuthContext';
 
 export function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -32,9 +34,15 @@ export function Login() {
 
       const { fullName, email: userEmail, role, token } = authResponse;
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify({ fullName, email: userEmail, role }));
-      
+      login(
+        { 
+          fullName, 
+          email: userEmail, 
+          role: role as 'Admin' | 'Manager' | 'Staff'
+        }, 
+        token
+      );
+
       navigate('/dashboard');
     } catch (error: any) {
       setError(error.message);

@@ -7,11 +7,15 @@ public class AdminHangfireAuthorizationFilter : IDashboardAuthorizationFilter
 {
     public bool Authorize(DashboardContext context)
     {
-        var httpContext = context.GetHttpContext();
+        var user = context.GetHttpContext().User;
 
-        if (!httpContext.User.Identity?.IsAuthenticated ?? true)
-            return false;
+        if (user.Identity?.IsAuthenticated != true) 
+            {
+                return false;
+            }
 
-        return httpContext.User.IsInRole("Admin");
+        // Check for Admin role specifically in the Claims
+        return user.HasClaim(c => c.Type == ClaimTypes.Role && c.Value == "Admin") || 
+            user.IsInRole("Admin");
     }
 }

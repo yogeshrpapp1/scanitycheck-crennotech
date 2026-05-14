@@ -1,5 +1,6 @@
 using System.Text;
 using Hangfire;
+using Hangfire.Dashboard;
 using Hangfire.SqlServer;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -61,6 +62,18 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
         options.Events = new JwtBearerEvents
         {
+
+            OnMessageReceived = context =>
+            {
+                // If there's no Header, try the Cookie
+                var accessToken = context.Request.Cookies["X-Auth-Token"];
+                if (!string.IsNullOrEmpty(accessToken))
+                {
+                    context.Token = accessToken;
+                }
+                return Task.CompletedTask;
+            },
+
             OnTokenValidated = async context =>
             {
                 var rawToken = context.Request.Headers.Authorization
@@ -143,14 +156,6 @@ app.UseExceptionHandler(errorApp =>
     });
 });
 
-app.UseSwagger();
-app.UseSwaggerUI(Theme.Dark, options => 
-{
-    options.SwaggerEndpoint("v1/swagger.json", "ScanityCheck API v1");
-    options.EnableThemeSwitcher();
-});
-
-
 app.UseHttpsRedirection();
 
 app.UseCors("DockerPolicy");
@@ -158,30 +163,50 @@ app.UseCors("DockerPolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Keep Hangfire open for local dev demo.
-// Later we can protect it with admin-only access.
+// Keep Swagger and Hangfire accessible during Development environment
+// Update api env variable ASPNETCORE_ENVIRONMENT to Production to enable protection
 
-// app.UseHangfireDashboard("/hangfire", new DashboardOptions
-// {
-//     Authorization = new[] { new AdminHangfireAuthorizationFilter() }
+// Swagger Protection
+if (!app.Environment.IsDevelopment())
+{
+    app.Use(async (context, next) =>
+    {
+        if (context.Request.Path.StartsWithSegments("/swagger"))
+        {
+            // Check if user is NOT authenticated OR NOT an Admin
+            if (context.User.Identity?.IsAuthenticated != true || !context.User.IsInRole("Admin"))
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await context.Response.WriteAsync("Admin access required.");
+                return;
+            }
+        }
+        await next();
+    });
+}
 
-// });
-// app.UseHangfireDashboard("/hangfire");
+app.UseSwagger();
+app.UseSwaggerUI(Theme.Dark, options => 
+{
+    options.SwaggerEndpoint("v1/swagger.json", "ScanityCheck API v1");
+    options.EnableThemeSwitcher();
+});
+
+// Hangfire Protection
+var hangfireOptions = new DashboardOptions();
 
 if (app.Environment.IsDevelopment())
 {
-    app.UseHangfireDashboard("/hangfire", new DashboardOptions
-    {
-        Authorization = new[] { new DevHangfireAuthorizationFilter() }
-    });
+    // In Dev, we provide an empty array so NO authorization is required
+    hangfireOptions.Authorization = Array.Empty<IDashboardAuthorizationFilter>();
 }
 else
 {
-    app.UseHangfireDashboard("/hangfire", new DashboardOptions
-    {
-        Authorization = new[] { new AdminHangfireAuthorizationFilter() }
-    });
+    // In Production, we enforce the Admin filter
+    hangfireOptions.Authorization = new[] { new AdminHangfireAuthorizationFilter() };
 }
+
+app.UseHangfireDashboard("/hangfire", hangfireOptions);
 
 app.MapControllers();
 
