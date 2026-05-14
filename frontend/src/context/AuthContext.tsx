@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { getAuthToken, setAuthToken } from '@/api/client';
 
 interface User {
   fullName: string;
@@ -21,14 +22,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const savedUser = localStorage.getItem('user');
+    const token = getAuthToken();
 
-    if (savedUser) {
+    if (savedUser && token) {
       try {
         const parsedUser: User = JSON.parse(savedUser);
         setUser(parsedUser);
       } catch (error) {
-      localStorage.removeItem('user');
+        logout();
       }
+    } else {
+      // If user data exists but token is missing (or vice versa), log out
+      logout();
     }
 
     setIsLoading(false);
@@ -37,13 +42,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const login = (userData: User, token: string) => { 
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
-    localStorage.setItem('token', token);
+    setAuthToken(token);
   };
 
   const logout = () => { 
     setUser(null);
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    setAuthToken(null);
   };
 
   return (

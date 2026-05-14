@@ -1,4 +1,5 @@
 import { RegisterRequest, LoginRequest, AuthResponse } from './types';
+import { getAuthToken } from '@/api/client';
 
 export const registerUser = async (data: RegisterRequest): Promise<AuthResponse> => {
   const response = await fetch('/api/Auth/register', {
@@ -33,7 +34,7 @@ export const loginUser = async (credentials: LoginRequest): Promise<AuthResponse
 };
 
 export const logoutUser = async (): Promise<void> => {
-  const token = localStorage.getItem('token');
+  const token = getAuthToken();
   
   if (!token) {return;}
 

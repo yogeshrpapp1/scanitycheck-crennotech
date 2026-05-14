@@ -2,6 +2,7 @@ import { useDisclosure } from '@mantine/hooks';
 import { Modal, Button, Group, Title, ScrollArea, Stack } from '@mantine/core';
 import { TargetsTable } from "@/components/Targets/TargetsTable";
 import { TargetsForm } from "@/components/Targets/TargetsForm";
+import { useRef, useCallback } from 'react';
 
 function CustomScrollArea(props: any) {
   return (
@@ -15,6 +16,18 @@ function CustomScrollArea(props: any) {
 
 export function TargetsPage() {
   const [opened, { open, close }] = useDisclosure(false);
+  // const [refreshTable, setRefreshTable] = useState<(isInitial: boolean) => void>(() => {});
+
+  const refreshTableRef = useRef<(isInitial: boolean) => void>(() => {});
+
+  const triggerRefresh = useCallback(() => {
+    refreshTableRef.current(false); // Call the function stored in the ref
+  }, []);
+
+  const handleRegister = useCallback((fn: (isInitial: boolean) => void) => {
+      refreshTableRef.current = fn;
+    }, []);
+
 
   return (
     <Stack gap="lg" p="md">
@@ -34,10 +47,13 @@ export function TargetsPage() {
         scrollAreaComponent={CustomScrollArea}
       >
         {/* Step 3: Pass 'close' to the form so it can shut the modal on save */}
-        <TargetsForm closeModal={close} />
+        <TargetsForm 
+          closeModal={close}
+          onRefresh={triggerRefresh}
+        />
       </Modal>
 
-      <TargetsTable />
+      <TargetsTable onRegisterRefresh={handleRegister} />
     </Stack>
   );
 }

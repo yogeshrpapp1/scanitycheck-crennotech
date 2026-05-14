@@ -21,6 +21,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { DarkModeToggle } from '../DarkModeToggle/DarkModeToggle';
 import { logoutUser } from '@/api/auth';
 import { useAuth } from '@/context/AuthContext';
+import { getAuthToken } from '@/api/client';
 
 type NavItem = {
   type: 'internal' | 'external' | 'action';
@@ -49,7 +50,7 @@ export function NavbarSimpleColored({ opened, toggle }: { opened: boolean; toggl
   const { user, logout } = useAuth();
 
   const handleSecureRedirect = async (targetPath: string) => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     
     try {
       // Request backend to set the HttpOnly cookie for this JWT

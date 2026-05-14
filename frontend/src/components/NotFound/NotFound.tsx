@@ -2,12 +2,13 @@ import { Button, Container, Image, SimpleGrid, Text, Title } from '@mantine/core
 import image from '@/assets/notfound.svg'
 import classes from './NotFound.module.css';
 import { useNavigate } from 'react-router-dom';
+import { getAuthToken } from '@/api/client';
 
 export function NotFound() {
   const navigate = useNavigate();
   
   const handleGoHome = () => {
-    const token = localStorage.getItem('token');
+    const token = getAuthToken();
     const target = token ? '/dashboard' : '/';
     navigate(target, { replace: true });
   };

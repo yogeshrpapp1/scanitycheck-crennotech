@@ -1,35 +1,61 @@
 import { Button, Checkbox, Group, TextInput, Textarea, Stack } from '@mantine/core';
 import { useForm } from '@mantine/form';
+import { notifications } from '@mantine/notifications';
+import { CreateTargetRequest } from '@/api/types';
+import { targetsService } from '@/api/targetsService';
 
 interface TargetsFormProps {
   closeModal: () => void;
+  onRefresh?: () => void;
 }
 
-export function TargetsForm( {closeModal}: TargetsFormProps ) {
-  const form = useForm({
+export function TargetsForm( { closeModal, onRefresh }: TargetsFormProps) {
+  const form = useForm<CreateTargetRequest>({
     mode: 'uncontrolled',
     initialValues: {
-      Name: '',
-      BaseUrl: '',
-      OpenApiUrl: '',
-      RequiresAuth: false,
-      ClientName: '',
-      ProductName: '',
-      Environment: '',
-      Notes: '',
+      name: '',
+      baseUrl: '',
+      openApiUrl: null,
+      requiresAuth: false,
+      clientName: null,
+      productName: null,
+      environment: '',
+      authHeader: null,
+      notes: null,
     },
 
     validate: {
-      Name: (value) => (value.length < 1 ? 'Name is required' : null),
-      // BaseUrl: (value) => (/^https?:\/\/\S+/.test(value) ? null : 'Invalid URL'),
+      name: (value) => (value.trim().length < 1 ? 'Name is required' : null),
+      baseUrl: (value) => {
+        if (!value || value.trim().length < 1) {return 'Base URL is required';}
+        return /^https?:\/\/\S+/.test(value) ? null : 'Invalid URL (must start with http:// or https://)';
+      },
+      environment: (value) => (value.trim().length < 1 ? 'Environment is required' : null),
     },
   });
 
-  // oxlint-disable-next-line no-console
-  const handleSave = (values: any) => {console.log(values);
-    // 1. You would normally do your API call here
-    // 2. Then close the modal
-    closeModal();
+  form.watch('requiresAuth', () => {});
+
+  const handleSave = async (values: CreateTargetRequest) => {
+    try {
+      // targetsService.create automatically handles the token via apiRequest
+      await targetsService.create(values);
+
+      notifications.show({
+        title: 'Success',
+        message: 'Target created successfully',
+        color: 'green',
+      });
+
+      closeModal();
+      onRefresh?.();
+    } catch (error: any) {
+      notifications.show({
+        title: 'Submission Error',
+        message: error.message || 'Failed to save target. Please check your connection.',
+        color: 'red',
+      });
+    }
   };
 
   return (
@@ -39,59 +65,64 @@ export function TargetsForm( {closeModal}: TargetsFormProps ) {
           label="Name"
           placeholder="e.g. Juice Shop"
           withAsterisk
-          key={form.key('Name')}
-          {...form.getInputProps('Name')}
+          {...form.getInputProps('name')}
         />
 
         <TextInput
           label="Base URL"
           placeholder="https://api.example.com"
           withAsterisk
-          key={form.key('BaseUrl')}
-          {...form.getInputProps('BaseUrl')}
+          {...form.getInputProps('baseUrl')}
         />
 
         <TextInput
           label="OpenAPI URL"
           placeholder="https://api.example.com/swagger.json"
-          key={form.key('OpenApiUrl')}
-          {...form.getInputProps('OpenApiUrl')}
+          {...form.getInputProps('openApiUrl')}
         />
 
         <TextInput
           label="Client Name"
           placeholder="Client Name"
-          key={form.key('ClientName')}
-          {...form.getInputProps('ClientName')}
+          {...form.getInputProps('clientName')}
         />
 
         <TextInput
           label="Product Name"
           placeholder="Product Name"
-          key={form.key('ProductName')}
-          {...form.getInputProps('ProductName')}
+          {...form.getInputProps('productName')}
         />
 
         <TextInput
           label="Environment"
-          placeholder="e.g., Production, Staging"
+          placeholder="e.g. Production, Staging"
           withAsterisk
-          key={form.key('Environment')}
-          {...form.getInputProps('Environment')}
+          {...form.getInputProps('environment')}
         />
 
         <Checkbox
           label="Requires Authentication"
-          key={form.key('RequiresAuth')}
-          {...form.getInputProps('RequiresAuth', { type: 'checkbox' })}
+          {...form.getInputProps('requiresAuth', { type: 'checkbox' })}
         />
+
+        {form.getValues().requiresAuth && (
+          <Textarea
+            label="Auth Header"
+            placeholder="e.g. Authorization: Bearer <token>"
+            autosize
+            minRows={8}
+            maxRows={8}
+            {...form.getInputProps('authHeader')}
+          />
+        )}
 
         <Textarea
           label="Notes"
           placeholder="Any additional information..."
-          minRows={3}
-          key={form.key('Notes')}
-          {...form.getInputProps('Notes')}
+          autosize
+          minRows={5}
+          maxRows={5}
+          {...form.getInputProps('notes')}
         />
 
         <Group justify="flex-end" mt="xl">

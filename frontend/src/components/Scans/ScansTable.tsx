@@ -274,7 +274,7 @@ export function ScansTable({ refreshKey = 0, pollIntervalMs = 5000 }: ScansTable
               reversed={reverseSortDirection}
               onSort={() => setSorting('id')}
             >
-              <Text component="span" fw={700} fz="sm" c="blue.4">
+              <Text component="span" fw={700} fz="sm" c="blue.7">
                 Scan ID
               </Text>
             </Th>
@@ -283,7 +283,7 @@ export function ScansTable({ refreshKey = 0, pollIntervalMs = 5000 }: ScansTable
               reversed={reverseSortDirection}
               onSort={() => setSorting('targetName')}
             >
-              <Text component="span" fw={700} fz="sm" c="blue.4">
+              <Text component="span" fw={700} fz="sm" c="blue.7">
                 Target
               </Text>
             </Th>
@@ -292,7 +292,7 @@ export function ScansTable({ refreshKey = 0, pollIntervalMs = 5000 }: ScansTable
               reversed={reverseSortDirection}
               onSort={() => setSorting('tool')}
             >
-              <Text component="span" fw={700} fz="sm" c="blue.4">
+              <Text component="span" fw={700} fz="sm" c="blue.7">
                 Tool
               </Text>
             </Th>
@@ -301,7 +301,7 @@ export function ScansTable({ refreshKey = 0, pollIntervalMs = 5000 }: ScansTable
               reversed={reverseSortDirection}
               onSort={() => setSorting('status')}
             >
-              <Text component="span" fw={700} fz="sm" c="blue.4">
+              <Text component="span" fw={700} fz="sm" c="blue.7">
                 Status
               </Text>
             </Th>
@@ -310,7 +310,7 @@ export function ScansTable({ refreshKey = 0, pollIntervalMs = 5000 }: ScansTable
               reversed={reverseSortDirection}
               onSort={() => setSorting('startedAt')}
             >
-              <Text component="span" fw={700} fz="sm" c="blue.4">
+              <Text component="span" fw={700} fz="sm" c="blue.7">
                 Started
               </Text>
             </Th>
@@ -319,7 +319,7 @@ export function ScansTable({ refreshKey = 0, pollIntervalMs = 5000 }: ScansTable
               reversed={reverseSortDirection}
               onSort={() => setSorting('completedAt')}
             >
-              <Text component="span" fw={700} fz="sm" c="blue.4">
+              <Text component="span" fw={700} fz="sm" c="blue.7">
                 Completed
               </Text>
             </Th>
