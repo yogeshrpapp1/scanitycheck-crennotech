@@ -78,4 +78,44 @@ Use the following details to connect to the database:
 | Zainab Begum| Frontend Developer |
 
 ## Project Status
-Currently in active development : Sprint 5
+Currently in active development : Sprint 6
+
+heck this 
+
+Sprint 1: Basic App Structure
+
+
+
+* Set up project repository
+
+* Create basic navigation structure
+
+* Build dashboard screen login screen & create account
+
+* Create report screen
+
+Sprint 2: Core Features
+
+
+
+* Implement reduix
+
+* Create template list screen
+
+* Add Firebase project connection
+
+Sprint 3: Final App Features
+
+
+
+* Implement Firebase Authentication
+
+* Save reports to Firestore
+
+* Display saved reports
+
+* Add PDF export feature
+
+* Improve accessibility and theme support
+
+* Test core app workflow this is how we thought of doing i just want does evrything is covered, or any task should i add into that, i also want subtask for evry task?
