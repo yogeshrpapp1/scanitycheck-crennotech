@@ -80,7 +80,7 @@ Use the following details to connect to the database:
 ## Project Status
 Currently in active development : Sprint 6
 
-heck this 
+Check this 
 
 Sprint 1: Basic App Structure
 
@@ -119,3 +119,12 @@ Sprint 3: Final App Features
 * Improve accessibility and theme support
 
 * Test core app workflow this is how we thought of doing i just want does evrything is covered, or any task should i add into that, i also want subtask for evry task?
+
+  Sprint 6 : Full Stack Integration & Frontend Completion
+
+   * Backend API integration with ZAP and Nuclei scanning engines
+   * Frontend React dashboard updates and UI improvements
+   * Implement JWT authentication and user access control
+   * Hangfire background job setup for scan execution
+   * Build scan history table and New Scan slide-over
+   * E2E testing with ZAP and Nuclei against Google Gruyere
